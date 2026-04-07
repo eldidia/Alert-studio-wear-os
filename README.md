@@ -1,20 +1,26 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# WatchAlert
 
-# Run and deploy your AI Studio app
+Home Front Command emergency alerts optimized for Samsung Smartwatch displays.
 
-This contains everything you need to run your app locally.
+## Android Installation (Automatic Build)
 
-View your app in AI Studio: https://ai.studio/apps/e8d7a665-1030-47da-b901-7af98c70ee5f
+This project is configured with **GitHub Actions** to automatically build the Android APK for you. You don't need a computer to install it!
 
-## Run Locally
+### How to get the APK:
+1.  **Export this project to your GitHub** using the "Export to GitHub" tool in the AI Studio settings.
+2.  Go to your repository on GitHub.
+3.  Click on the **"Actions"** tab at the top.
+4.  You will see a workflow named **"Android CI"** running. Wait for it to finish (it takes about 2-3 minutes).
+5.  Once it's done (green checkmark), click on the workflow run.
+6.  Scroll down to the **"Artifacts"** section.
+7.  Download the **`watch-alert-debug-apk`** ZIP file.
+8.  Extract the ZIP on your phone and install the `.apk` file!
 
-**Prerequisites:**  Node.js
+### Developer Mode Installation (Watch)
+1.  Enable **Developer Options** on your watch.
+2.  Enable **ADB Debugging** and **Debug over Wi-Fi**.
+3.  Use an app like **"Bugjaeger"** (available on the Play Store) on your phone to connect to your watch's IP address.
+4.  Select the downloaded `.apk` file in Bugjaeger and install it to your watch!
 
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Web Version
+The live web version is always available at your deployment URL.
