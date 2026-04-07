@@ -19,7 +19,9 @@
 }
 
 .watch-face {
-  @apply relative w-[320px] h-[320px] rounded-full overflow-hidden border-4 border-zinc-800 shadow-2xl;
+  @apply relative rounded-full overflow-hidden border-4 border-zinc-800 shadow-2xl;
+  width: min(95vw, 95vh);
+  height: min(95vw, 95vh);
   background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
 }
 

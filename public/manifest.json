@@ -1,0 +1,16 @@
+{
+  "name": "WatchAlert",
+  "short_name": "WatchAlert",
+  "description": "Real-time alerts for smartwatches",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "https://picsum.photos/seed/alert/192/192",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
