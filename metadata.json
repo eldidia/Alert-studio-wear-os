@@ -1,0 +1,5 @@
+{
+  "name": "WatchAlert",
+  "description": "Home Front Command emergency alerts optimized for Samsung Smartwatch displays.",
+  "requestFramePermissions": ["geolocation"]
+}
