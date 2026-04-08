@@ -36,6 +36,11 @@ public class AlertService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null && intent.getBooleanExtra("test_notification", false)) {
+            showCriticalNotification("Test Alert", "This is a test notification from WatchAlert");
+            return START_STICKY;
+        }
+
         if (!isRunning) {
             isRunning = true;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {

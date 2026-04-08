@@ -334,7 +334,8 @@ export default function App() {
       const response = await fetch('/api/alerts');
       
       if (!response.ok) {
-        throw new Error(t.connectionError);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || t.connectionError);
       }
 
       const data: Alert = await response.json();
@@ -369,13 +370,19 @@ export default function App() {
       setError(null);
     } catch (err) {
       console.error("Fetch error:", err);
-      if (retryCount < 2) {
-        setTimeout(() => fetchAlerts(retryCount + 1), 2000);
+      const message = err instanceof Error ? err.message : String(err);
+      
+      if (message === "Failed to fetch") {
+        setError("Server Connection Lost. Retrying...");
       } else {
-        setError(err instanceof Error ? err.message : t.connectionError);
+        setError(message);
+      }
+
+      if (retryCount < 3) {
+        setTimeout(() => fetchAlerts(retryCount + 1), 3000);
       }
     }
-  }, [isMonitoring, lastAlertId, notificationsEnabled, filterToCity, userCity, t]);
+  }, [isMonitoring, lastAlertId, notificationsEnabled, filterToCity, userCity, t, triggerVibration, normalizeCity]);
 
   // Polling mechanism
   useEffect(() => {

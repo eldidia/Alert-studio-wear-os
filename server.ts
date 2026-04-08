@@ -2,9 +2,13 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
+import nodeFetch from "node-fetch";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Use global fetch if available (Node 18+), otherwise use node-fetch
+const fetch: any = (globalThis as any).fetch || nodeFetch;
 
 const FALLBACK_CITIES_HE = [
   "תל אביב - יפו", "ירושלים", "חיפה", "ראשון לציון", "פתח תקווה", "אשדוד", "נתניה", "באר שבע", 
@@ -71,6 +75,13 @@ function processCities(jsonData: any, lang: string | any): string[] {
 async function startServer() {
   const app = express();
   const PORT = 3000;
+
+  console.log("Starting server...");
+
+  // Health check
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", time: new Date().toISOString(), nodeVersion: process.version });
+  });
 
   // API Proxy for Home Front Command (Pikud HaOref)
   // The official API is CORS-restricted and requires specific headers
@@ -309,4 +320,7 @@ async function startServer() {
   });
 }
 
-startServer();
+startServer().catch(err => {
+  console.error("Failed to start server:", err);
+  process.exit(1);
+});

@@ -2,100 +2,94 @@ package com.watchalert;
 
 import android.Manifest;
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.Gravity;
-import android.view.WindowManager;
-import android.webkit.JavascriptInterface;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class MainActivity extends Activity {
-    private WebView webView;
     private static final int PERMISSION_REQUEST_CODE = 123;
+    private LinearLayout profilesContainer;
+    private TextView statusText;
+    private View statusIndicator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
-        // Set a basic background color immediately
-        getWindow().setBackgroundDrawableResource(android.R.color.black);
+        setContentView(R.layout.activity_main);
 
-        // Small delay to let the system settle
-        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
-            try {
-                // Try to initialize WebView
-                webView = new WebView(this);
-                setupWebView();
-                setContentView(webView);
-            } catch (Exception e) {
-                e.printStackTrace();
-                showErrorView("WebView Error: " + e.getMessage());
-            }
-        }, 100);
+        statusText = findViewById(R.id.statusText);
+        statusIndicator = findViewById(R.id.statusIndicator);
+        profilesContainer = findViewById(R.id.profilesContainer);
+        Button settingsButton = findViewById(R.id.settingsButton);
+        Button testButton = findViewById(R.id.testButton);
+
+        settingsButton.setOnClickListener(v -> {
+            startActivity(new Intent(this, SettingsActivity.class));
+        });
+
+        testButton.setOnClickListener(v -> {
+            Intent serviceIntent = new Intent(this, AlertService.class);
+            serviceIntent.putExtra("test_notification", true);
+            startService(serviceIntent);
+        });
 
         checkPermissions();
     }
 
-    private void setupWebView() {
-        WebSettings webSettings = webView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
-        webSettings.setDomStorageEnabled(true);
-        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        
-        // Optimize for watch display
-        webSettings.setUseWideViewPort(true);
-        webSettings.setLoadWithOverviewMode(true);
-        
-        webView.setWebViewClient(new WebViewClient());
-        webView.addJavascriptInterface(new WebAppInterface(this), "AndroidApp");
-        
-        // Load the shared app URL
-        webView.loadUrl("https://ais-pre-y3k5cv2ixjhrkidsg7weac-327783083381.europe-west1.run.app");
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateUI();
     }
 
-    private void showErrorView(String message) {
-        TextView errorView = new TextView(this);
-        errorView.setText(message + "\n\nPlease ensure Android System WebView is updated.");
-        errorView.setTextColor(android.graphics.Color.WHITE);
-        errorView.setGravity(Gravity.CENTER);
-        errorView.setPadding(20, 20, 20, 20);
-        setContentView(errorView);
-    }
+    private void updateUI() {
+        JSONObject config = ConfigManager.getConfig(this);
+        boolean isMonitoring = config.optBoolean("isMonitoring", true);
+        
+        statusText.setText(isMonitoring ? "Monitoring Active" : "Monitoring Paused");
+        statusIndicator.setBackgroundColor(isMonitoring ? Color.GREEN : Color.RED);
 
-    public class WebAppInterface {
-        Context mContext;
+        profilesContainer.removeAllViews();
+        JSONArray profiles = config.optJSONArray("profiles");
+        if (profiles != null && profiles.length() > 0) {
+            for (int i = 0; i < profiles.length(); i++) {
+                try {
+                    JSONObject profile = profiles.getJSONObject(i);
+                    if (!profile.optBoolean("enabled", true)) continue;
 
-        WebAppInterface(Context c) {
-            mContext = c;
-        }
+                    View itemView = getLayoutInflater().inflate(R.layout.profile_item, profilesContainer, false);
+                    TextView nameView = itemView.findViewById(R.id.profileName);
+                    TextView detailsView = itemView.findViewById(R.id.profileDetails);
 
-        @JavascriptInterface
-        public void updateConfig(String configJson) {
-            SharedPreferences sharedPref = mContext.getSharedPreferences("WatchAlertPrefs", Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString("appConfig", configJson);
-            editor.apply();
-        }
+                    nameView.setText(profile.optString("name", "Unnamed Profile"));
+                    String city = profile.optString("city", "All Cities");
+                    JSONArray types = profile.optJSONArray("types");
+                    String typesStr = (types == null || types.length() == 0) ? "All Types" : types.length() + " Types";
+                    detailsView.setText(city + " • " + typesStr);
 
-        @JavascriptInterface
-        public void updateFilter(String city, boolean filterEnabled, boolean isMonitoring) {
-            // Legacy support
-            SharedPreferences sharedPref = mContext.getSharedPreferences("WatchAlertPrefs", Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString("filterCity", city);
-            editor.putBoolean("filterEnabled", filterEnabled);
-            editor.putBoolean("isMonitoring", isMonitoring);
-            editor.apply();
+                    profilesContainer.addView(itemView);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        } else {
+            TextView emptyView = new TextView(this);
+            emptyView.setText("No active profiles");
+            emptyView.setTextColor(Color.GRAY);
+            emptyView.setTextSize(10);
+            emptyView.setPadding(20, 10, 0, 0);
+            profilesContainer.addView(emptyView);
         }
     }
 
@@ -127,15 +121,6 @@ public class MainActivity extends Activity {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startAlertService();
             }
-        }
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
         }
     }
 }
