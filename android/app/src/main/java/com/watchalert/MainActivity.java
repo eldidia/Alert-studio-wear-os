@@ -56,18 +56,54 @@ public class MainActivity extends Activity {
     private void updateUI() {
         JSONObject config = ConfigManager.getConfig(this);
         boolean isMonitoring = config.optBoolean("isMonitoring", true);
+        String lang = config.optString("lang", "he");
         
-        statusText.setText(isMonitoring ? "Monitoring Active" : "Monitoring Paused");
+        String status = isMonitoring ? "Monitoring Active" : "Monitoring Paused";
+        if (lang.equals("he")) status = isMonitoring ? "ניטור פעיל" : "ניטור מושהה";
+        else if (lang.equals("ar")) status = isMonitoring ? "المراقبة نشطة" : "المراقبة متوقفة";
+        else if (lang.equals("ru")) status = isMonitoring ? "Мониторинг активен" : "Мониторинг приостановлен";
+
+        statusText.setText(status);
         statusIndicator.setBackgroundColor(isMonitoring ? Color.GREEN : Color.RED);
 
+        // Update other labels
+        TextView activeProfilesLabel = findViewById(R.id.activeProfilesLabel);
+        Button testButton = findViewById(R.id.testButton);
+        Button settingsButton = findViewById(R.id.settingsButton);
+
+        if (lang.equals("he")) {
+            activeProfilesLabel.setText("פרופילים פעילים");
+            testButton.setText("בדיקת התרעה");
+            settingsButton.setText("הגדרות");
+        } else if (lang.equals("ar")) {
+            activeProfilesLabel.setText("الملفات الشخصية النشطة");
+            testButton.setText("اختبار التنبيه");
+            settingsButton.setText("الإعدادات");
+        } else if (lang.equals("ru")) {
+            activeProfilesLabel.setText("Активные профили");
+            testButton.setText("Тестовый сигнал");
+            settingsButton.setText("Настройки");
+        } else {
+            activeProfilesLabel.setText("Active Profiles");
+            testButton.setText("Test Alert");
+            settingsButton.setText("Settings");
+        }
+
         profilesContainer.removeAllViews();
+
+        String lang = config.optString("lang", "he");
 
         // Show Global Type Filters if active
         if (config.optBoolean("filterByTypes", false)) {
             JSONArray selectedTypes = config.optJSONArray("selectedTypes");
             if (selectedTypes != null && selectedTypes.length() > 0) {
                 TextView typeHeader = new TextView(this);
-                typeHeader.setText("Global Type Filter Active");
+                String label = "Global Type Filter Active";
+                if (lang.equals("he")) label = "סינון סוגי התרעות פעיל";
+                else if (lang.equals("ar")) label = "تصفية أنواع التنبيهات نشطة";
+                else if (lang.equals("ru")) label = "Глобальный фильтр типов активен";
+                
+                typeHeader.setText(label);
                 typeHeader.setTextColor(Color.parseColor("#2563eb"));
                 typeHeader.setTextSize(9);
                 typeHeader.setPadding(20, 10, 0, 5);
@@ -80,7 +116,12 @@ public class MainActivity extends Activity {
             String userCity = config.optString("userCity", "");
             if (!userCity.isEmpty()) {
                 TextView cityHeader = new TextView(this);
-                cityHeader.setText("City Filter: " + userCity);
+                String label = "City Filter: ";
+                if (lang.equals("he")) label = "סינון עיר: ";
+                else if (lang.equals("ar")) label = "تصفية المدينة: ";
+                else if (lang.equals("ru")) label = "Фильтр по городу: ";
+                
+                cityHeader.setText(label + userCity);
                 cityHeader.setTextColor(Color.parseColor("#2563eb"));
                 cityHeader.setTextSize(9);
                 cityHeader.setPadding(20, 5, 0, 5);

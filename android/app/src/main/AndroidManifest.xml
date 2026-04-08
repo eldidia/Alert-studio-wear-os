@@ -31,6 +31,11 @@
             android:exported="false"
             android:theme="@android:style/Theme.Material.NoActionBar" />
 
+        <activity
+            android:name=".ProfileEditorActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Material.NoActionBar" />
+
         <service
             android:name=".AlertService"
             android:enabled="true"
