@@ -192,6 +192,8 @@ export default function App() {
   const [apiWarning, setApiWarning] = useState<string | null>(null);
   const [userCity, setUserCity] = useState<string | null>(null);
   const [filterToCity, setFilterToCity] = useState(false);
+  const [filterByTypes, setFilterByTypes] = useState(false);
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [lang, setLang] = useState<Language>('he');
   const [cities, setCities] = useState<string[]>(FALLBACK_CITIES);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
@@ -211,7 +213,9 @@ export default function App() {
         profiles,
         // Legacy support for older versions of the service if needed
         userCity,
-        filterToCity
+        filterToCity,
+        filterByTypes,
+        selectedTypes
       };
       (window as any).AndroidApp.updateConfig(JSON.stringify(config));
     }
@@ -343,25 +347,30 @@ export default function App() {
       
       // Check if there's a new alert
       if (data.id !== "0" && data.id !== lastAlertId) {
-        const relevantAlerts = data.data.filter(alertCity => {
-          if (!filterToCity || !userCity) return true;
-          const normalizedAlert = normalizeCity(alertCity);
-          const normalizedUser = normalizeCity(userCity);
-          return normalizedAlert.includes(normalizedUser) || normalizedUser.includes(normalizedAlert);
-        });
+        // Global Type Filter
+        const typeMatch = !filterByTypes || selectedTypes.length === 0 || selectedTypes.some(type => data.title.includes(type));
+        
+        if (typeMatch) {
+          const relevantAlerts = data.data.filter(alertCity => {
+            if (!filterToCity || !userCity) return true;
+            const normalizedAlert = normalizeCity(alertCity);
+            const normalizedUser = normalizeCity(userCity);
+            return normalizedAlert.includes(normalizedUser) || normalizedUser.includes(normalizedAlert);
+          });
 
-        if (relevantAlerts.length > 0) {
-          setAlerts({ ...data, data: relevantAlerts });
-          setLastAlertId(data.id);
-          triggerVibration();
-          
-          if (notificationsEnabled) {
-            new Notification(t.alertActive, {
-              body: relevantAlerts.join(", "),
-              icon: "/favicon.ico",
-              tag: "oref-alert",
-              requireInteraction: true
-            });
+          if (relevantAlerts.length > 0) {
+            setAlerts({ ...data, data: relevantAlerts });
+            setLastAlertId(data.id);
+            triggerVibration();
+            
+            if (notificationsEnabled) {
+              new Notification(t.alertActive, {
+                body: relevantAlerts.join(", "),
+                icon: "/favicon.ico",
+                tag: "oref-alert",
+                requireInteraction: true
+              });
+            }
           }
         }
       } else if (data.id === "0") {
@@ -693,6 +702,46 @@ export default function App() {
                         </div>
                       </div>
                     )}
+
+                    {/* Alert Type Filter */}
+                    <div className="flex flex-col gap-2 mt-2">
+                      <button
+                        onClick={() => setFilterByTypes(!filterByTypes)}
+                        className={`flex items-center justify-between w-full p-3 rounded-xl ${
+                          filterByTypes ? 'bg-blue-600/20 text-blue-400' : 'bg-zinc-800/50'
+                        }`}
+                      >
+                        <div className="flex flex-col items-start">
+                          <span className="text-xs font-medium">{t.alertTypes}</span>
+                          <span className="text-[10px] opacity-60">
+                            {selectedTypes.length === 0 ? t.allTypes : `${selectedTypes.length} ${t.alertTypes}`}
+                          </span>
+                        </div>
+                        <ShieldAlert size={14} className={filterByTypes ? "text-blue-400" : "text-zinc-500"} />
+                      </button>
+
+                      {filterByTypes && (
+                        <div className="grid grid-cols-1 gap-1 bg-zinc-900/50 p-2 rounded-xl border border-zinc-800/50">
+                          {ALERT_TYPES.map(type => (
+                            <button
+                              key={type.id}
+                              onClick={() => {
+                                const types = selectedTypes.includes(type.he)
+                                  ? selectedTypes.filter(t => t !== type.he)
+                                  : [...selectedTypes, type.he];
+                                setSelectedTypes(types);
+                              }}
+                              className={`flex items-center justify-between p-2 px-3 rounded-lg text-[10px] transition-all ${
+                                selectedTypes.includes(type.he) ? 'bg-blue-600/20 text-blue-400' : 'text-zinc-500 hover:bg-zinc-800/50'
+                              }`}
+                            >
+                              <span>{lang === 'he' ? type.he : type.en}</span>
+                              {selectedTypes.includes(type.he) && <div className="w-1 h-1 bg-blue-400 rounded-full" />}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex flex-col gap-2 mt-2">

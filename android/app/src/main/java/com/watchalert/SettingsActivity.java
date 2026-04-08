@@ -13,7 +13,19 @@ import org.json.JSONObject;
 
 public class SettingsActivity extends Activity {
     private Switch monitoringSwitch;
+    private Switch typeFilterSwitch;
+    private LinearLayout typesContainer;
     private LinearLayout profilesContainer;
+
+    private static final String[][] ALERT_TYPES = {
+        {"ירי רקטות וטילים", "Rockets"},
+        {"חדירת כלי טיס עוין", "Aircraft"},
+        {"חדירת מחבלים", "Terrorist"},
+        {"רעידת אדמה", "Earthquake"},
+        {"צונאמי", "Tsunami"},
+        {"חומרים מסוכנים", "Hazmat"},
+        {"אירוע רדיולוגי", "Radiological"}
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -21,32 +33,108 @@ public class SettingsActivity extends Activity {
         setContentView(R.layout.activity_settings);
 
         monitoringSwitch = findViewById(R.id.monitoringSwitch);
+        typeFilterSwitch = findViewById(R.id.typeFilterSwitch);
+        typesContainer = findViewById(R.id.typesContainer);
         profilesContainer = findViewById(R.id.settingsProfilesContainer);
         Button addProfileButton = findViewById(R.id.addProfileButton);
         Button backButton = findViewById(R.id.backButton);
 
         JSONObject config = ConfigManager.getConfig(this);
         monitoringSwitch.setChecked(config.optBoolean("isMonitoring", true));
+        typeFilterSwitch.setChecked(config.optBoolean("filterByTypes", false));
+        typesContainer.setVisibility(typeFilterSwitch.isChecked() ? View.VISIBLE : View.GONE);
 
         monitoringSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            try {
-                JSONObject newConfig = ConfigManager.getConfig(this);
-                newConfig.put("isMonitoring", isChecked);
-                ConfigManager.saveConfig(this, newConfig);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            updateConfig("isMonitoring", isChecked);
+        });
+
+        typeFilterSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateConfig("filterByTypes", isChecked);
+            typesContainer.setVisibility(isChecked ? View.VISIBLE : View.GONE);
         });
 
         addProfileButton.setOnClickListener(v -> {
-            // For now, just add a default profile to show it works
-            // In a full app, this would open a ProfileEditorActivity
             addDefaultProfile();
         });
 
         backButton.setOnClickListener(v -> finish());
 
         updateProfilesList();
+        setupTypesList();
+    }
+
+    private void updateConfig(String key, Object value) {
+        try {
+            JSONObject config = ConfigManager.getConfig(this);
+            config.put(key, value);
+            ConfigManager.saveConfig(this, config);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void setupTypesList() {
+        typesContainer.removeAllViews();
+        JSONObject config = ConfigManager.getConfig(this);
+        JSONArray selectedTypes = config.optJSONArray("selectedTypes");
+        if (selectedTypes == null) selectedTypes = new JSONArray();
+
+        for (String[] type : ALERT_TYPES) {
+            final String heName = type[0];
+            final String enName = type[1];
+            
+            Button typeBtn = new Button(this);
+            typeBtn.setText(enName);
+            typeBtn.setTextSize(10);
+            typeBtn.setAllCaps(true);
+            
+            boolean isSelected = false;
+            for (int i = 0; i < selectedTypes.length(); i++) {
+                if (selectedTypes.optString(i).equals(heName)) {
+                    isSelected = true;
+                    break;
+                }
+            }
+
+            typeBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                isSelected ? Color.parseColor("#2563eb") : Color.parseColor("#222222")
+            ));
+            typeBtn.setTextColor(Color.WHITE);
+
+            typeBtn.setOnClickListener(v -> {
+                toggleSelectedType(heName);
+                setupTypesList();
+            });
+
+            typesContainer.addView(typeBtn);
+        }
+    }
+
+    private void toggleSelectedType(String typeName) {
+        try {
+            JSONObject config = ConfigManager.getConfig(this);
+            JSONArray selectedTypes = config.optJSONArray("selectedTypes");
+            if (selectedTypes == null) selectedTypes = new JSONArray();
+
+            boolean found = false;
+            JSONArray newList = new JSONArray();
+            for (int i = 0; i < selectedTypes.length(); i++) {
+                if (selectedTypes.getString(i).equals(typeName)) {
+                    found = true;
+                } else {
+                    newList.put(selectedTypes.get(i));
+                }
+            }
+
+            if (!found) {
+                newList.put(typeName);
+            }
+
+            config.put("selectedTypes", newList);
+            ConfigManager.saveConfig(this, config);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void addDefaultProfile() {

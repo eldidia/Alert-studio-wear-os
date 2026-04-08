@@ -61,6 +61,20 @@ public class MainActivity extends Activity {
         statusIndicator.setBackgroundColor(isMonitoring ? Color.GREEN : Color.RED);
 
         profilesContainer.removeAllViews();
+
+        // Show Global Type Filters if active
+        if (config.optBoolean("filterByTypes", false)) {
+            JSONArray selectedTypes = config.optJSONArray("selectedTypes");
+            if (selectedTypes != null && selectedTypes.length() > 0) {
+                TextView typeHeader = new TextView(this);
+                typeHeader.setText("Global Type Filter Active");
+                typeHeader.setTextColor(Color.parseColor("#2563eb"));
+                typeHeader.setTextSize(9);
+                typeHeader.setPadding(20, 10, 0, 5);
+                profilesContainer.addView(typeHeader);
+            }
+        }
+
         JSONArray profiles = config.optJSONArray("profiles");
         if (profiles != null && profiles.length() > 0) {
             for (int i = 0; i < profiles.length(); i++) {

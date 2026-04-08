@@ -105,6 +105,23 @@ public class AlertService extends Service {
                                         JSONObject config = new JSONObject(configJson);
                                         isMonitoring = config.optBoolean("isMonitoring", true);
                                         profiles = config.optJSONArray("profiles");
+                                        
+                                        // Global Type Filter
+                                        boolean filterByTypes = config.optBoolean("filterByTypes", false);
+                                        JSONArray selectedTypes = config.optJSONArray("selectedTypes");
+                                        if (filterByTypes && selectedTypes != null && selectedTypes.length() > 0) {
+                                            boolean globalTypeMatch = false;
+                                            String title = json.getString("title");
+                                            for (int i = 0; i < selectedTypes.length(); i++) {
+                                                if (title.contains(selectedTypes.getString(i))) {
+                                                    globalTypeMatch = true;
+                                                    break;
+                                                }
+                                            }
+                                            if (!globalTypeMatch) {
+                                                return; // Skip this alert entirely
+                                            }
+                                        }
                                     } catch (Exception e) {
                                         // Fallback to legacy if JSON fails
                                         isMonitoring = sharedPref.getBoolean("isMonitoring", true);
