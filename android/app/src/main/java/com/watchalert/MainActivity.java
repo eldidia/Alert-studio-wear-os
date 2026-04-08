@@ -91,8 +91,6 @@ public class MainActivity extends Activity {
 
         profilesContainer.removeAllViews();
 
-        String lang = config.optString("lang", "he");
-
         // Show Global Type Filters if active
         if (config.optBoolean("filterByTypes", false)) {
             JSONArray selectedTypes = config.optJSONArray("selectedTypes");
