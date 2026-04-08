@@ -134,6 +134,13 @@ export default function App() {
 
   const t = translations[lang];
 
+  // Sync with Android Native App
+  useEffect(() => {
+    if ((window as any).AndroidApp && (window as any).AndroidApp.updateFilter) {
+      (window as any).AndroidApp.updateFilter(userCity || "", filterToCity, isMonitoring);
+    }
+  }, [userCity, filterToCity, isMonitoring]);
+
   // Get user location and cities list
   useEffect(() => {
     const init = async () => {

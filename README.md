@@ -22,5 +22,8 @@ This project is configured with **GitHub Actions** to automatically build the An
 3.  Use an app like **"Bugjaeger"** (available on the Play Store) on your phone to connect to your watch's IP address.
 4.  Select the downloaded `.apk` file in Bugjaeger and install it to your watch!
 
-## Web Version
-The live web version is always available at your deployment URL.
+## Background Monitoring
+This app now includes a **Native Android Foreground Service**. 
+- It continues to monitor for alerts even when the app is closed or the screen is off.
+- It shows a persistent notification ("Monitoring Active") to ensure the system doesn't kill the process.
+- When an alert is detected, it will trigger a high-priority notification with vibration, even on your watch's lock screen.
