@@ -10,50 +10,74 @@ const __dirname = path.dirname(__filename);
 // Use global fetch if available (Node 18+), otherwise use node-fetch
 const fetch: any = (globalThis as any).fetch || nodeFetch;
 
-const FALLBACK_CITIES_HE = [
-  "תל אביב - יפו", "ירושלים", "חיפה", "ראשון לציון", "פתח תקווה", "אשדוד", "נתניה", "באר שבע", 
-  "בני ברק", "חולון", "רמת גן", "רחובות", "אשקלון", "בת ים", "בית שמש", "כפר סבא", "הרצליה", 
-  "חדרה", "מודיעין-מכבים-רעות", "לוד", "רמלה", "רעננה", "מודיעין עילית", "רהט", "הוד השרון", 
-  "גבעתיים", "קריית אתא", "נהריה", "ביתר עילית", "אום אל-פחם", "קריית גת", "אילת", "ראש העין",
-  "נס ציונה", "עכו", "אלעד", "רמת השרון", "כרמיאל", "יבנה", "טבריה", "טייבה", "קריית מוצקין",
-  "קריית ים", "קריית ביאליק", "קריית שמונה", "מעלה אדומים", "אור יהודה", "צפת", "נתיבות",
-  "דימונה", "טמרה", "סח'נין", "יהוד-מונוסון", "באקה אל-גרבייה", "אופקים", "גבעת שמואל",
-  "טירה", "ערד", "מגדל העמק", "קריית מלאכי", "שפרעם", "נשר", "קריית אונו", "מעלות-תרשיחא",
-  "טירת כרמל", "שדרות", "בית שאן", "כפר קאסם", "קלנסווה", "נצרת", "עפולה", "מגדל", "קצרין",
-  "קריית ארבע", "אריאל", "מעלה אפרים", "שלומי", "חצור הגלילית", "ראש פינה",
-  "מטולה", "יסוד המעלה", "קריית טבעון", "רמת ישי", "זכרון יעקב", "בנימינה-גבעת עדה", "פרדס חנה-כרכור",
-  "ג'סר א-זרקא", "פוריידיס", "אור עקיבא", "קיסריה", "חריש", "ג'ת", "זמר",
-  "כפר קרע", "ערערה", "מעלה עירון", "פרדסיה", "כפר יונה",
-  "קדימה-צורן", "תל מונד", "אבן יהודה", "כפר שמריהו", "כוכב יאיר-צור יגאל", "אלפי מנשה", "קרני שומרון", 
-  "קדומים", "עמנואל", "אורנית", "אלקנה", "שוהם", "בית דגן", "אזור", "גני תקווה",
-  "סביון", "בני עייש", "גן יבנה", "מזכרת בתיה", "קריית עקרון",
-  "גדרה", "באר יעקב", "ירוחם", "מצפה רמון", "חבל אילות", "ערבה תיכונה", "תמר", "רמת נגב", "אשכול", 
-  "שער הנגב", "שדות נגב", "חוף אשקלון", "לכיש", "יואב", "שפיר", "באר טוביה", "חבל יבנה", "נחל שורק", "ברנר",
-  "גדרות", "עמק לוד", "גזר", "מטה יהודה", "מטה בנימין", "שומרון", "בקעת הירדן", "גוש עציון",
-  "הר חברון", "מגילות ים המלח", "ערבות הירדן", "עמק המעיינות", "גלבוע", "עמק יזרעאל",
-  "מגידו", "אלונה", "מנשה", "חוף הכרמל", "זבולון", "עמק חפר", "דרום השרון", "לב השרון",
-  "חבל מודיעין", "מרחבים", "בני שמעון", "אל קסום", "נווה מדבר", "מבשרת ציון", "קריית יערים", "אבו גוש",
-  "צור הדסה", "כוכב יעקב", "פסגות", "בית אל", "עפרה", "שילה", "עלי", "טלמון", "דולב", "נילי", "נעלה",
-  "חשמונאים", "כפר האורנים", "לפיד", "שילת", "מכבים", "רעות", "נוף איילון", "שעלבים", "יסודות", "יד בנימין",
-  "חפץ חיים", "גני טל", "קטיף", "כרמי צור", "נוקדים", "תקוע", "אלעזר", "ראש צורים", "כפר עציון", "מגדל עוז",
-  "אפרת", "ביתר עילית", "צור יצחק", "צור נתן", "סלעית", "צור משה", "פרדסיה", "בת חפר", "יד חנה", "ניצני עוז"
+interface CityInfo {
+  name: string;
+  district: string;
+  time: string;
+}
+
+const FALLBACK_CITIES_HE: CityInfo[] = [
+  { name: "תל אביב - יפו", district: "דן", time: "90" },
+  { name: "ירושלים", district: "ירושלים", time: "90" },
+  { name: "חיפה", district: "חיפה", time: "60" },
+  { name: "ראשון לציון", district: "דן", time: "90" },
+  { name: "פתח תקווה", district: "דן", time: "90" },
+  { name: "אשדוד", district: "לכיש", time: "60" },
+  { name: "נתניה", district: "שרון", time: "90" },
+  { name: "באר שבע", district: "מרכז הנגב", time: "60" },
+  { name: "בני ברק", district: "דן", time: "90" },
+  { name: "חולון", district: "דן", time: "90" },
+  { name: "רמת גן", district: "דן", time: "90" },
+  { name: "רחובות", district: "שפלה", time: "90" },
+  { name: "אשקלון", district: "לכיש", time: "30" },
+  { name: "בת ים", district: "דן", time: "90" },
+  { name: "בית שמש", district: "ירושלים", time: "90" },
+  { name: "כפר סבא", district: "שרון", time: "90" },
+  { name: "הרצליה", district: "שרון", time: "90" },
+  { name: "חדרה", district: "שרון", time: "90" },
+  { name: "מודיעין-מכבים-רעות", district: "שפלה", time: "90" },
+  { name: "לוד", district: "שפלה", time: "90" },
+  { name: "רמלה", district: "שפלה", time: "90" },
+  { name: "רעננה", district: "שרון", time: "90" },
+  { name: "מודיעין עילית", district: "שפלה", time: "90" },
+  { name: "רהט", district: "מרכז הנגב", time: "60" },
+  { name: "הוד השרון", district: "שרון", time: "90" },
+  { name: "גבעתיים", district: "דן", time: "90" },
+  { name: "קריית אתא", district: "חיפה", time: "60" },
+  { name: "נהריה", district: "קו העימות", time: "0" },
+  { name: "ביתר עילית", district: "ירושלים", time: "90" },
+  { name: "אום אל-פחם", district: "ואדי ערה", time: "90" },
+  { name: "קריית גת", district: "לכיש", time: "60" },
+  { name: "אילת", district: "אילת", time: "30" },
+  { name: "ראש העין", district: "שרון", time: "90" },
+  { name: "נס ציונה", district: "שפלה", time: "90" },
+  { name: "עכו", district: "גליל עליון", time: "30" },
+  { name: "אלעד", district: "שרון", time: "90" },
+  { name: "רמת השרון", district: "שרון", time: "90" },
+  { name: "כרמיאל", district: "גליל עליון", time: "30" },
+  { name: "יבנה", district: "שפלה", time: "60" },
+  { name: "טבריה", district: "גליל תחתון", time: "60" },
+  { name: "טייבה", district: "שרון", time: "90" },
+  { name: "קריית מוצקין", district: "חיפה", time: "60" },
+  { name: "קריית ים", district: "חיפה", time: "60" },
+  { name: "קריית ביאליק", district: "חיפה", time: "60" },
+  { name: "קריית שמונה", district: "קו העימות", time: "0" },
+  { name: "מעלה אדומים", district: "ירושלים", time: "90" },
+  { name: "אור יהודה", district: "דן", time: "90" },
+  { name: "צפת", district: "גליל עליון", time: "30" },
+  { name: "נתיבות", district: "עוטף עזה", time: "30" },
+  { name: "דימונה", district: "דרום הנגב", time: "60" },
+  { name: "שדרות", district: "עוטף עזה", time: "15" },
 ];
 
-const FALLBACK_CITIES_EN = [
-  "Tel Aviv - Yafo", "Jerusalem", "Haifa", "Rishon LeZion", "Petah Tikva", "Ashdod", "Netanya", "Beersheba",
-  "Bnei Brak", "Holon", "Ramat Gan", "Rehovot", "Ashkelon", "Bat Yam", "Beit Shemesh", "Kfar Saba", "Herzliya",
-  "Hadera", "Modiin", "Lod", "Ramla", "Ra'anana", "Modiin Illit", "Rahat", "Hod HaSharon",
-  "Givatayim", "Kiryat Ata", "Nahariya", "Beitar Illit", "Umm al-Fahm", "Kiryat Gat", "Eilat", "Rosh Haayin",
-  "Nes Ziona", "Acre", "El'ad", "Ramat HaSharon", "Karmiel", "Yavne", "Tiberias", "Tayibe", "Kiryat Motzkin",
-  "Kiryat Yam", "Kiryat Bialik", "Kiryat Shmona", "Ma'ale Adumim", "Or Yehuda", "Safed", "Netivot",
-  "Dimona", "Tamra", "Sakhnin", "Yehud-Monosson", "Baqa al-Gharbiyye", "Ofakim", "Givat Shmuel",
-  "Tira", "Arad", "Migdal HaEmek", "Kiryat Malakhi", "Shefa-'Amr", "Nesher", "Kiryat Ono", "Ma'alot-Tarshiha",
-  "Tirat Carmel", "Sderot", "Beit She'an", "Kafr Qasim", "Qalansawe", "Nazareth", "Afula", "Katzrin", "Ariel",
-  "Ma'ale Efrayim", "Mitzpe Ramon", "Yeruham", "Netivot", "Sderot", "Ofakim", "Beit She'an", "Kiryat Shmona"
-];
+const FALLBACK_CITIES_EN: CityInfo[] = FALLBACK_CITIES_HE.map(c => ({
+  ...c,
+  // Simple mapping for fallback, in reality we'd fetch translated names
+  name: c.name 
+}));
 
 // In-memory cache for cities to avoid repeated 403s
-const citiesCache: Record<string, string[]> = {
+const citiesCache: Record<string, CityInfo[]> = {
   he: FALLBACK_CITIES_HE,
   en: FALLBACK_CITIES_EN
 };
@@ -70,18 +94,42 @@ interface AlertLogEntry {
 let alertHistory: AlertLogEntry[] = [];
 let simulatedAlert: AlertLogEntry | null = null;
 
-function processCities(jsonData: any, lang: string | any): string[] {
-  let cityNames: string[] = [];
+function processCities(jsonData: any, lang: string | any): CityInfo[] {
+  let cities: CityInfo[] = [];
   if (Array.isArray(jsonData)) {
-    cityNames = jsonData.map(item => {
+    cities = jsonData.map(item => {
       let name = "";
-      if (typeof item === 'string') name = item;
-      else name = item.v || item.n || item.value || item.label || "";
-      return name.trim().normalize('NFC');
-    }).filter(Boolean);
-    cityNames = Array.from(new Set(cityNames)).sort((a, b) => a.localeCompare(b, lang === 'he' ? 'he' : 'en'));
+      let district = "";
+      let time = "";
+      
+      if (typeof item === 'string') {
+        name = item;
+      } else {
+        name = item.v || item.n || item.value || item.label || "";
+        district = item.d || item.district || "";
+        time = item.t || item.time || "";
+      }
+      
+      return {
+        name: name.trim().normalize('NFC'),
+        district: district.trim(),
+        time: time.trim()
+      };
+    }).filter(c => c.name);
+    
+    // Sort by name
+    cities.sort((a, b) => a.name.localeCompare(b.name, lang === 'he' ? 'he' : 'en'));
+    
+    // De-duplicate
+    const seen = new Set();
+    cities = cities.filter(c => {
+      const key = `${c.name}-${c.district}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   }
-  return cityNames;
+  return cities;
 }
 
 async function startServer() {

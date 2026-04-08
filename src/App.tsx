@@ -175,11 +175,18 @@ const translations = {
   }
 };
 
-const FALLBACK_CITIES = [
-  "תל אביב - יפו", "ירושלים", "חיפה", "ראשון לציון", "פתח תקווה", "אשדוד", "נתניה", "באר שבע", 
-  "בני ברק", "חולון", "רמת גן", "רחובות", "אשקלון", "בת ים", "בית שמש", "כפר סבא", "הרצליה", 
-  "חדרה", "מודיעין-מכבים-רעות", "לוד", "רמלה", "רעננה", "מודיעין עילית", "רהט", "הוד השרון", 
-  "גבעתיים", "קריית אתא", "נהריה", "ביתר עילית", "אום אל-פחם", "קריית גת", "אילת", "ראש העין"
+interface CityInfo {
+  name: string;
+  district: string;
+  time: string;
+}
+
+const FALLBACK_CITIES: CityInfo[] = [
+  { name: "תל אביב - יפו", district: "דן", time: "90" },
+  { name: "ירושלים", district: "ירושלים", time: "90" },
+  { name: "חיפה", district: "חיפה", time: "60" },
+  { name: "אשדוד", district: "לכיש", time: "60" },
+  { name: "באר שבע", district: "מרכז הנגב", time: "60" },
 ];
 
 interface AlertProfile {
@@ -219,7 +226,7 @@ export default function App() {
     if (saved && ['he', 'en', 'ar', 'ru'].includes(saved)) return saved as Language;
     return 'he';
   });
-  const [cities, setCities] = useState<string[]>(FALLBACK_CITIES);
+  const [cities, setCities] = useState<CityInfo[]>(FALLBACK_CITIES);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [showCitySelector, setShowCitySelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -261,9 +268,7 @@ export default function App() {
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
-            // Deduplicate and sort with normalization
-            const uniqueCities = Array.from(new Set(data.map((c: string) => c.trim().normalize('NFC')))).sort();
-            setCities(uniqueCities);
+            setCities(data);
           }
         }
       } catch (e) {
@@ -469,7 +474,7 @@ export default function App() {
   };
 
   const filteredCities = cities.filter(c => 
-    c.toLowerCase().includes(searchQuery.toLowerCase().trim())
+    c.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
   );
 
   const toggleProfile = (id: string) => {
@@ -801,21 +806,26 @@ export default function App() {
                         <div className="space-y-0.5">
                           {filteredCities.slice(0, 100).map(city => (
                             <button
-                              key={city}
+                              key={`${city.name}-${city.district}`}
                               onClick={() => {
-                                setUserCity(city);
+                                setUserCity(city.name);
                                 setShowCitySelector(false);
                                 setFilterToCity(true);
                                 setSearchQuery('');
                               }}
                               className={`w-full text-left text-[10px] p-2 px-3 rounded-lg transition-all group flex items-center justify-between ${
-                                userCity === city 
+                                userCity === city.name 
                                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
                                   : 'bg-zinc-800/20 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
                               }`}
                             >
-                              <span>{city}</span>
-                              {userCity === city && <div className="w-1 h-1 bg-white rounded-full" />}
+                              <div className="flex flex-col">
+                                <span className="font-medium">{city.name}</span>
+                                <span className="text-[8px] opacity-60">
+                                  {city.district}{city.time && ` • ${city.time}s`}
+                                </span>
+                              </div>
+                              {userCity === city.name && <div className="w-1 h-1 bg-white rounded-full" />}
                             </button>
                           ))}
                           {filteredCities.length > 100 && (
@@ -984,7 +994,9 @@ export default function App() {
                 >
                   <option value="">{t.allCities}</option>
                   {cities.map(c => (
-                    <option key={c} value={c}>{c}</option>
+                    <option key={`${c.name}-${c.district}`} value={c.name}>
+                      {c.name} ({c.district})
+                    </option>
                   ))}
                 </select>
               </div>

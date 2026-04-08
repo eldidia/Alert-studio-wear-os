@@ -28,6 +28,7 @@ public class SettingsActivity extends Activity {
     private LinearLayout citySuggestionsContainer;
     private LinearLayout profilesContainer;
     private Button langHe, langEn, langAr, langRu;
+    private List<CityManager.CityInfo> allCities = new ArrayList<>();
 
     private static final String[] ALL_CITIES = {
         "תל אביב - יפו", "ירושלים", "חיפה", "באר שבע", "אשדוד", "נתניה", "ראשון לציון", "פתח תקווה",
@@ -130,6 +131,12 @@ public class SettingsActivity extends Activity {
         backButton.setOnClickListener(v -> finish());
 
         String lang = config.optString("lang", "he");
+        allCities = CityManager.getCachedCities(this);
+        CityManager.fetchCities(this, lang, cities -> {
+            allCities = cities;
+            setupCitiesList(lang);
+        });
+
         updateProfilesList(lang);
         setupTypesList(lang);
         setupCitiesList(lang);
@@ -224,9 +231,9 @@ public class SettingsActivity extends Activity {
             return;
         }
 
-        List<String> matches = Arrays.stream(ALL_CITIES)
-                .filter(city -> city.contains(query))
-                .limit(5)
+        List<CityManager.CityInfo> matches = allCities.stream()
+                .filter(city -> city.name.contains(query))
+                .limit(8)
                 .collect(Collectors.toList());
 
         if (matches.isEmpty()) {
@@ -235,19 +242,29 @@ public class SettingsActivity extends Activity {
         }
 
         citySuggestionsContainer.setVisibility(View.VISIBLE);
-        for (String match : matches) {
-            Button suggestionBtn = new Button(this);
-            suggestionBtn.setText(match);
-            suggestionBtn.setTextSize(10);
-            suggestionBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#333333")));
-            suggestionBtn.setTextColor(Color.WHITE);
-            suggestionBtn.setOnClickListener(v -> {
-                updateConfig("userCity", match);
+        for (CityManager.CityInfo city : matches) {
+            View suggestionView = getLayoutInflater().inflate(android.R.layout.simple_list_item_2, null);
+            TextView text1 = suggestionView.findViewById(android.R.id.text1);
+            TextView text2 = suggestionView.findViewById(android.R.id.text2);
+            
+            text1.setText(city.name);
+            text1.setTextColor(Color.WHITE);
+            text1.setTextSize(14);
+            
+            String defenseTime = city.time.isEmpty() ? "" : " (" + city.time + "s)";
+            text2.setText(city.district + defenseTime);
+            text2.setTextColor(Color.GRAY);
+            text2.setTextSize(11);
+
+            suggestionView.setPadding(16, 16, 16, 16);
+            suggestionView.setOnClickListener(v -> {
+                updateConfig("userCity", city.name);
                 citySearchInput.setText("");
                 citySuggestionsContainer.setVisibility(View.GONE);
-                setupCitiesList();
+                setupCitiesList(ConfigManager.getConfig(this).optString("lang", "he"));
             });
-            citySuggestionsContainer.addView(suggestionBtn);
+
+            citySuggestionsContainer.addView(suggestionView);
         }
     }
 
@@ -320,12 +337,16 @@ public class SettingsActivity extends Activity {
         JSONObject config = ConfigManager.getConfig(this);
         String currentCity = config.optString("userCity", "");
 
-        for (String city : MAJOR_CITIES) {
+        List<String> majorNames = Arrays.asList("תל אביב - יפו", "ירושלים", "חיפה", "באר שבע", "אשדוד");
+
+        for (CityManager.CityInfo city : allCities) {
+            if (!majorNames.contains(city.name)) continue;
+            
             Button cityBtn = new Button(this);
-            cityBtn.setText(city);
+            cityBtn.setText(city.name);
             cityBtn.setTextSize(10);
             
-            boolean isSelected = city.equals(currentCity);
+            boolean isSelected = city.name.equals(currentCity);
 
             cityBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
                 isSelected ? Color.parseColor("#2563eb") : Color.parseColor("#222222")
@@ -333,7 +354,7 @@ public class SettingsActivity extends Activity {
             cityBtn.setTextColor(Color.WHITE);
 
             cityBtn.setOnClickListener(v -> {
-                updateConfig("userCity", isSelected ? "" : city);
+                updateConfig("userCity", isSelected ? "" : city.name);
                 setupCitiesList(lang);
             });
 
