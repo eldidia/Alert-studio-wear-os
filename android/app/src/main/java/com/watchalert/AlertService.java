@@ -132,7 +132,7 @@ public class AlertService extends Service {
                                             boolean globalCityMatch = false;
                                             JSONArray dataArray = json.getJSONArray("data");
                                             for (int i = 0; i < dataArray.length(); i++) {
-                                                if (dataArray.getString(i).contains(userCity)) {
+                                                if (CityUtils.isMatch(dataArray.getString(i), userCity)) {
                                                     globalCityMatch = true;
                                                     break;
                                                 }
@@ -183,7 +183,7 @@ public class AlertService extends Service {
                                         boolean cityMatch = profileCity.isEmpty();
                                         if (!cityMatch) {
                                             for (int j = 0; j < dataArray.length(); j++) {
-                                                if (dataArray.getString(j).contains(profileCity)) {
+                                                if (CityUtils.isMatch(dataArray.getString(j), profileCity)) {
                                                     cityMatch = true;
                                                     break;
                                                 }

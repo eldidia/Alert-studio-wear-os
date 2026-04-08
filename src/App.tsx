@@ -328,13 +328,36 @@ export default function App() {
   }, [vibrationEnabled]);
 
   const normalizeCity = (name: string) => {
+    if (!name) return "";
     return name
       .trim()
       .normalize('NFC')
-      .replace(/[\u05F3\u05F4'"]/g, '') // Remove quotes and geresh for comparison
-      .replace(/\s-/g, '-')
-      .replace(/-\s/g, '-')
-      .toLowerCase();
+      .replace(/[\u05F3\u05F4'"]/g, '') // Remove quotes and geresh
+      .replace(/[׳״]/g, '')
+      .replace(/[-/]/g, ' ') // Replace hyphens and slashes with spaces
+      .toLowerCase()
+      .replace(/\s+/g, ' '); // Collapse spaces
+  };
+
+  const isCityMatch = (alertCity: string, userCity: string) => {
+    const normAlert = normalizeCity(alertCity);
+    const normUser = normalizeCity(userCity);
+    
+    if (!normAlert || !normUser) return false;
+    
+    if (normAlert === normUser) return true;
+    
+    // Hierarchical match: user selected "Ashdod", matches "Ashdod Area A"
+    if (normAlert.startsWith(normUser + " ") || normAlert.startsWith(normUser + " -")) {
+      return true;
+    }
+
+    // Reverse hierarchical (just in case)
+    if (normUser.startsWith(normAlert + " ") || normUser.startsWith(normAlert + " -")) {
+      return true;
+    }
+
+    return normAlert.includes(normUser) || normUser.includes(normAlert);
   };
 
   const testNotification = () => {
@@ -388,9 +411,7 @@ export default function App() {
         if (typeMatch) {
           const relevantAlerts = data.data.filter(alertCity => {
             if (!filterToCity || !userCity) return true;
-            const normalizedAlert = normalizeCity(alertCity);
-            const normalizedUser = normalizeCity(userCity);
-            return normalizedAlert.includes(normalizedUser) || normalizedUser.includes(normalizedAlert);
+            return isCityMatch(alertCity, userCity);
           });
 
           if (relevantAlerts.length > 0) {
