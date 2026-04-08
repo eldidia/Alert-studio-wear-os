@@ -8,6 +8,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -37,7 +38,11 @@ public class AlertService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (!isRunning) {
             isRunning = true;
-            startForeground(1, getServiceNotification("Monitoring Active"));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(1, getServiceNotification("Monitoring Active"), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE);
+            } else {
+                startForeground(1, getServiceNotification("Monitoring Active"));
+            }
             startPolling();
         }
         return START_STICKY;
@@ -78,38 +83,96 @@ public class AlertService extends Service {
 
                     String jsonStr = response.toString().trim();
                     if (!jsonStr.isEmpty()) {
-                        JSONObject json = new JSONObject(jsonStr);
-                        String id = json.getString("id");
-                        if (!id.equals(lastAlertId) && !id.equals("0")) {
-                            lastAlertId = id;
-                            
-                            SharedPreferences sharedPref = getSharedPreferences("WatchAlertPrefs", Context.MODE_PRIVATE);
-                            boolean isMonitoring = sharedPref.getBoolean("isMonitoring", true);
-                            
-                            if (!isMonitoring) {
-                                return;
-                            }
-
-                            String filterCity = sharedPref.getString("filterCity", "");
-                            boolean filterEnabled = sharedPref.getBoolean("filterEnabled", false);
-                            
-                            JSONArray dataArray = json.getJSONArray("data");
-                            boolean matchFound = !filterEnabled || filterCity.isEmpty();
-                            
-                            if (filterEnabled && !filterCity.isEmpty()) {
-                                for (int i = 0; i < dataArray.length(); i++) {
-                                    if (dataArray.getString(i).contains(filterCity)) {
-                                        matchFound = true;
-                                        break;
+                        try {
+                            JSONObject json = new JSONObject(jsonStr);
+                            String id = json.getString("id");
+                            if (!id.equals(lastAlertId) && !id.equals("0")) {
+                                lastAlertId = id;
+                                
+                                SharedPreferences sharedPref = getSharedPreferences("WatchAlertPrefs", Context.MODE_PRIVATE);
+                                String configJson = sharedPref.getString("appConfig", "");
+                                
+                                boolean isMonitoring = true;
+                                JSONArray profiles = new JSONArray();
+                                
+                                if (!configJson.isEmpty()) {
+                                    try {
+                                        JSONObject config = new JSONObject(configJson);
+                                        isMonitoring = config.optBoolean("isMonitoring", true);
+                                        profiles = config.optJSONArray("profiles");
+                                    } catch (Exception e) {
+                                        // Fallback to legacy if JSON fails
+                                        isMonitoring = sharedPref.getBoolean("isMonitoring", true);
+                                    }
+                                } else {
+                                    // Legacy fallback
+                                    isMonitoring = sharedPref.getBoolean("isMonitoring", true);
+                                    String filterCity = sharedPref.getString("filterCity", "");
+                                    boolean filterEnabled = sharedPref.getBoolean("filterEnabled", false);
+                                    if (filterEnabled && !filterCity.isEmpty()) {
+                                        JSONObject legacyProfile = new JSONObject();
+                                        legacyProfile.put("city", filterCity);
+                                        legacyProfile.put("enabled", true);
+                                        legacyProfile.put("types", new JSONArray());
+                                        profiles = new JSONArray();
+                                        profiles.put(legacyProfile);
                                     }
                                 }
-                            }
+                                
+                                if (!isMonitoring) {
+                                    return;
+                                }
 
-                            if (matchFound) {
                                 String title = json.getString("title");
-                                String data = dataArray.join(", ").replace("\"", "");
-                                showCriticalNotification(title, data);
+                                JSONArray dataArray = json.getJSONArray("data");
+                                
+                                boolean matchFound = false;
+                                
+                                // If no profiles defined, show all alerts
+                                if (profiles == null || profiles.length() == 0) {
+                                    matchFound = true;
+                                } else {
+                                    for (int i = 0; i < profiles.length(); i++) {
+                                        JSONObject profile = profiles.getJSONObject(i);
+                                        if (!profile.optBoolean("enabled", true)) continue;
+                                        
+                                        String profileCity = profile.optString("city", "");
+                                        JSONArray profileTypes = profile.optJSONArray("types");
+                                        
+                                        boolean cityMatch = profileCity.isEmpty();
+                                        if (!cityMatch) {
+                                            for (int j = 0; j < dataArray.length(); j++) {
+                                                if (dataArray.getString(j).contains(profileCity)) {
+                                                    cityMatch = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        
+                                        boolean typeMatch = profileTypes == null || profileTypes.length() == 0;
+                                        if (!typeMatch) {
+                                            for (int j = 0; j < profileTypes.length(); j++) {
+                                                if (title.contains(profileTypes.getString(j))) {
+                                                    typeMatch = true;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                        
+                                        if (cityMatch && typeMatch) {
+                                            matchFound = true;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (matchFound) {
+                                    String data = dataArray.join(", ").replace("\"", "");
+                                    showCriticalNotification(title, data);
+                                }
                             }
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
                     } else {
                         lastAlertId = "0";

@@ -35,6 +35,18 @@ const translations = {
     testNotification: 'בדיקת התראה',
     iframeWarning: 'התראות עשויות להיחסם בתצוגה המקדימה. מומלץ לפתוח בדף חדש.',
     vibration: 'רטט',
+    alertTypes: 'סוגי התרעות',
+    profiles: 'פרופילי התרעה',
+    addProfile: 'הוסף פרופיל',
+    profileName: 'שם הפרופיל',
+    allTypes: 'כל הסוגים',
+    rockets: 'ירי רקטות וטילים',
+    aircraft: 'חדירת כלי טיס עוין',
+    terrorist: 'חדירת מחבלים',
+    earthquake: 'רעידת אדמה',
+    tsunami: 'צונאמי',
+    hazmat: 'חומרים מסוכנים',
+    radiological: 'אירוע רדיולוגי',
   },
   en: {
     monitoring: 'Monitoring Active',
@@ -58,6 +70,18 @@ const translations = {
     testNotification: 'Test Notification',
     iframeWarning: 'Notifications may be blocked in preview. Open in a new tab.',
     vibration: 'Vibration',
+    alertTypes: 'Alert Types',
+    profiles: 'Alert Profiles',
+    addProfile: 'Add Profile',
+    profileName: 'Profile Name',
+    allTypes: 'All Types',
+    rockets: 'Rockets & Missiles',
+    aircraft: 'Hostile Aircraft',
+    terrorist: 'Terrorist Infiltration',
+    earthquake: 'Earthquake',
+    tsunami: 'Tsunami',
+    hazmat: 'Hazardous Materials',
+    radiological: 'Radiological Event',
   },
   ar: {
     monitoring: 'المراقبة نشطة',
@@ -81,6 +105,18 @@ const translations = {
     testNotification: 'إشعار تجريبي',
     iframeWarning: 'قد يتم حظر الإشعارات في المعاينة. افتح في علامة تبويب جديدة.',
     vibration: 'اهتزاز',
+    alertTypes: 'أنواع التنبيهات',
+    profiles: 'ملفات التنبيه',
+    addProfile: 'إضافة ملف',
+    profileName: 'اسم الملف',
+    allTypes: 'جميع الأنواع',
+    rockets: 'إطلاق صواريخ وقذائف',
+    aircraft: 'تسلל طائرة معادية',
+    terrorist: 'تسلל مسلحين',
+    earthquake: 'زلزال',
+    tsunami: 'تسونامي',
+    hazmat: 'مواد خطرة',
+    radiological: 'حدث إشعاعي',
   },
   ru: {
     monitoring: 'Мониторинг активен',
@@ -104,6 +140,18 @@ const translations = {
     testNotification: 'Тестовое уведомление',
     iframeWarning: 'Уведомления могут быть заблокированы в предпросмотре. Откройте в новой вкладке.',
     vibration: 'Вибрация',
+    alertTypes: 'Типы оповещений',
+    profiles: 'Профили оповещений',
+    addProfile: 'Добавить профиль',
+    profileName: 'Имя профиля',
+    allTypes: 'Все типы',
+    rockets: 'Ракетный обстрел',
+    aircraft: 'Вражеский БПЛА',
+    terrorist: 'Проникновение террористов',
+    earthquake: 'Землетрясение',
+    tsunami: 'Цунами',
+    hazmat: 'Опасные вещества',
+    radiological: 'Радиационная угроза',
   }
 };
 
@@ -112,6 +160,24 @@ const FALLBACK_CITIES = [
   "בני ברק", "חולון", "רמת גן", "רחובות", "אשקלון", "בת ים", "בית שמש", "כפר סבא", "הרצליה", 
   "חדרה", "מודיעין-מכבים-רעות", "לוד", "רמלה", "רעננה", "מודיעין עילית", "רהט", "הוד השרון", 
   "גבעתיים", "קריית אתא", "נהריה", "ביתר עילית", "אום אל-פחם", "קריית גת", "אילת", "ראש העין"
+];
+
+interface AlertProfile {
+  id: string;
+  name: string;
+  city: string | null;
+  types: string[]; // Empty means all
+  enabled: boolean;
+}
+
+const ALERT_TYPES = [
+  { id: 'rockets', he: 'ירי רקטות וטילים', en: 'Rockets & Missiles' },
+  { id: 'aircraft', he: 'חדירת כלי טיס עוין', en: 'Hostile Aircraft' },
+  { id: 'terrorist', he: 'חדירת מחבלים', en: 'Terrorist Infiltration' },
+  { id: 'earthquake', he: 'רעידת אדמה', en: 'Earthquake' },
+  { id: 'tsunami', he: 'צונאמי', en: 'Tsunami' },
+  { id: 'hazmat', he: 'חומרים מסוכנים', en: 'Hazardous Materials' },
+  { id: 'radiological', he: 'אירוע רדיולוגי', en: 'Radiological Event' },
 ];
 
 export default function App() {
@@ -131,15 +197,25 @@ export default function App() {
   const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [showCitySelector, setShowCitySelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [profiles, setProfiles] = useState<AlertProfile[]>([]);
+  const [showProfileEditor, setShowProfileEditor] = useState<string | null>(null); // profile id or 'new'
+  const [editingProfile, setEditingProfile] = useState<AlertProfile | null>(null);
 
   const t = translations[lang];
 
   // Sync with Android Native App
   useEffect(() => {
-    if ((window as any).AndroidApp && (window as any).AndroidApp.updateFilter) {
-      (window as any).AndroidApp.updateFilter(userCity || "", filterToCity, isMonitoring);
+    if ((window as any).AndroidApp && (window as any).AndroidApp.updateConfig) {
+      const config = {
+        isMonitoring,
+        profiles,
+        // Legacy support for older versions of the service if needed
+        userCity,
+        filterToCity
+      };
+      (window as any).AndroidApp.updateConfig(JSON.stringify(config));
     }
-  }, [userCity, filterToCity, isMonitoring]);
+  }, [userCity, filterToCity, isMonitoring, profiles]);
 
   // Get user location and cities list
   useEffect(() => {
@@ -316,6 +392,41 @@ export default function App() {
   const filteredCities = cities.filter(c => 
     c.toLowerCase().includes(searchQuery.toLowerCase().trim())
   );
+
+  const toggleProfile = (id: string) => {
+    setProfiles(prev => prev.map(p => p.id === id ? { ...p, enabled: !p.enabled } : p));
+  };
+
+  const deleteProfile = (id: string) => {
+    setProfiles(prev => prev.filter(p => p.id !== id));
+  };
+
+  const saveProfile = () => {
+    if (!editingProfile) return;
+    if (showProfileEditor === 'new') {
+      setProfiles(prev => [...prev, { ...editingProfile, id: Date.now().toString() }]);
+    } else {
+      setProfiles(prev => prev.map(p => p.id === showProfileEditor ? editingProfile : p));
+    }
+    setShowProfileEditor(null);
+    setEditingProfile(null);
+  };
+
+  const startNewProfile = () => {
+    setEditingProfile({
+      id: 'new',
+      name: '',
+      city: null,
+      types: [],
+      enabled: true
+    });
+    setShowProfileEditor('new');
+  };
+
+  const startEditProfile = (p: AlertProfile) => {
+    setEditingProfile({ ...p });
+    setShowProfileEditor(p.id);
+  };
 
   return (
     <div className={`watch-container ${lang === 'he' || lang === 'ar' ? 'rtl' : 'ltr'}`} dir={lang === 'he' || lang === 'ar' ? 'rtl' : 'ltr'}>
@@ -577,6 +688,38 @@ export default function App() {
                     )}
                   </div>
 
+                  <div className="flex flex-col gap-2 mt-2">
+                    <div className="flex items-center justify-between px-1">
+                      <span className="text-[10px] text-zinc-500 uppercase tracking-widest">{t.profiles}</span>
+                      <button 
+                        onClick={startNewProfile}
+                        className="text-[10px] text-blue-400 font-bold hover:underline"
+                      >
+                        +{t.addProfile}
+                      </button>
+                    </div>
+                    
+                    <div className="flex flex-col gap-1.5">
+                      {profiles.map(p => (
+                        <div key={p.id} className="flex items-center gap-2 bg-zinc-800/40 p-2 rounded-xl border border-zinc-800/50">
+                          <button 
+                            onClick={() => toggleProfile(p.id)}
+                            className={`w-4 h-4 rounded-full border ${p.enabled ? 'bg-blue-500 border-blue-500' : 'border-zinc-600'}`}
+                          />
+                          <div className="flex-1 flex flex-col items-start overflow-hidden" onClick={() => startEditProfile(p)}>
+                            <span className="text-[11px] font-bold text-zinc-200 truncate w-full">{p.name}</span>
+                            <span className="text-[9px] text-zinc-500 truncate w-full">
+                              {p.city || t.allCities} • {p.types.length > 0 ? p.types.length : t.allTypes}
+                            </span>
+                          </div>
+                          <button onClick={() => deleteProfile(p.id)} className="p-1 text-zinc-600 hover:text-red-400">
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="p-3 rounded-xl bg-zinc-800/50 flex flex-col gap-2">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium">{t.about}</span>
@@ -622,6 +765,84 @@ export default function App() {
           {apiWarning}
         </div>
       )}
+      {/* Profile Editor Modal */}
+      <AnimatePresence>
+        {showProfileEditor && editingProfile && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="absolute inset-0 z-[100] bg-black/95 flex flex-col p-6 overflow-y-auto scrollbar-hide"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">
+                {showProfileEditor === 'new' ? t.addProfile : editingProfile.name}
+              </h3>
+              <button onClick={() => setShowProfileEditor(null)} className="p-1 text-zinc-500">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] text-zinc-500 uppercase px-1">{t.profileName}</label>
+                <input 
+                  type="text"
+                  value={editingProfile.name}
+                  onChange={e => setEditingProfile({ ...editingProfile, name: e.target.value })}
+                  className="bg-zinc-800 rounded-xl p-3 text-xs outline-none border border-zinc-700 focus:border-blue-500"
+                  placeholder="e.g. Home"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] text-zinc-500 uppercase px-1">{t.selectCity}</label>
+                <select 
+                  value={editingProfile.city || ''}
+                  onChange={e => setEditingProfile({ ...editingProfile, city: e.target.value || null })}
+                  className="bg-zinc-800 rounded-xl p-3 text-xs outline-none border border-zinc-700 appearance-none"
+                >
+                  <option value="">{t.allCities}</option>
+                  {cities.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] text-zinc-500 uppercase px-1">{t.alertTypes}</label>
+                <div className="grid grid-cols-1 gap-1">
+                  {ALERT_TYPES.map(type => (
+                    <button
+                      key={type.id}
+                      onClick={() => {
+                        const types = editingProfile.types.includes(type.he)
+                          ? editingProfile.types.filter(t => t !== type.he)
+                          : [...editingProfile.types, type.he];
+                        setEditingProfile({ ...editingProfile, types });
+                      }}
+                      className={`flex items-center justify-between p-2.5 rounded-xl text-[10px] transition-colors ${
+                        editingProfile.types.includes(type.he) ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'bg-zinc-800/40 text-zinc-500 border border-transparent'
+                      }`}
+                    >
+                      <span>{lang === 'he' ? type.he : type.en}</span>
+                      {editingProfile.types.includes(type.he) && <Activity size={10} />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                onClick={saveProfile}
+                disabled={!editingProfile.name}
+                className="mt-4 w-full py-3 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-lg shadow-blue-900/20 disabled:opacity-50"
+              >
+                {t.done}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

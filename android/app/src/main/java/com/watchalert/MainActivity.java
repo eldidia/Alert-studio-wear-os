@@ -1,23 +1,25 @@
 package com.watchalert;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.TextView;
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
     private WebView webView;
     private static final int PERMISSION_REQUEST_CODE = 123;
 
@@ -25,26 +27,30 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Keep screen on for alerts
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        
-        webView = new WebView(this);
-        WebSettings webSettings = webView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
-        webSettings.setDomStorageEnabled(true);
-        webSettings.setDatabaseEnabled(true);
-        
-        // Optimize for watch display
-        webSettings.setUseWideViewPort(true);
-        webSettings.setLoadWithOverviewMode(true);
-        
-        webView.setWebViewClient(new WebViewClient());
-        webView.addJavascriptInterface(new WebAppInterface(this), "AndroidApp");
-        
-        // Load the shared app URL
-        webView.loadUrl("https://ais-pre-y3k5cv2ixjhrkidsg7weac-327783083381.europe-west1.run.app");
-        
-        setContentView(webView);
+        try {
+            webView = new WebView(this);
+            WebSettings webSettings = webView.getSettings();
+            webSettings.setJavaScriptEnabled(true);
+            webSettings.setDomStorageEnabled(true);
+            
+            // Optimize for watch display
+            webSettings.setUseWideViewPort(true);
+            webSettings.setLoadWithOverviewMode(true);
+            
+            webView.setWebViewClient(new WebViewClient());
+            webView.addJavascriptInterface(new WebAppInterface(this), "AndroidApp");
+            
+            // Load the shared app URL
+            webView.loadUrl("https://ais-pre-y3k5cv2ixjhrkidsg7weac-327783083381.europe-west1.run.app");
+            
+            setContentView(webView);
+        } catch (Exception e) {
+            e.printStackTrace();
+            TextView errorView = new TextView(this);
+            errorView.setText("Error loading WebView: " + e.getMessage());
+            errorView.setGravity(Gravity.CENTER);
+            setContentView(errorView);
+        }
 
         checkPermissions();
     }
@@ -57,7 +63,16 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface
+        public void updateConfig(String configJson) {
+            SharedPreferences sharedPref = mContext.getSharedPreferences("WatchAlertPrefs", Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putString("appConfig", configJson);
+            editor.apply();
+        }
+
+        @JavascriptInterface
         public void updateFilter(String city, boolean filterEnabled, boolean isMonitoring) {
+            // Legacy support
             SharedPreferences sharedPref = mContext.getSharedPreferences("WatchAlertPrefs", Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPref.edit();
             editor.putString("filterCity", city);
