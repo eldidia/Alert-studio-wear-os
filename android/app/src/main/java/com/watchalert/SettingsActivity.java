@@ -14,6 +14,7 @@ import android.widget.TextView;
 import android.widget.EditText;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -413,7 +414,7 @@ public class SettingsActivity extends Activity {
             JSONObject profile = profiles.getJSONObject(index);
             profile.put("enabled", !profile.optBoolean("enabled", true));
             ConfigManager.saveConfig(this, config);
-            updateProfilesList();
+            updateProfilesList(config.optString("lang", "he"));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -429,7 +430,7 @@ public class SettingsActivity extends Activity {
             }
             config.put("profiles", newProfiles);
             ConfigManager.saveConfig(this, config);
-            updateProfilesList();
+            updateProfilesList(config.optString("lang", "he"));
         } catch (Exception e) {
             e.printStackTrace();
         }
