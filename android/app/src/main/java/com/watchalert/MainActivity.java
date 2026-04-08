@@ -27,32 +27,49 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        try {
-            webView = new WebView(this);
-            WebSettings webSettings = webView.getSettings();
-            webSettings.setJavaScriptEnabled(true);
-            webSettings.setDomStorageEnabled(true);
-            
-            // Optimize for watch display
-            webSettings.setUseWideViewPort(true);
-            webSettings.setLoadWithOverviewMode(true);
-            
-            webView.setWebViewClient(new WebViewClient());
-            webView.addJavascriptInterface(new WebAppInterface(this), "AndroidApp");
-            
-            // Load the shared app URL
-            webView.loadUrl("https://ais-pre-y3k5cv2ixjhrkidsg7weac-327783083381.europe-west1.run.app");
-            
-            setContentView(webView);
-        } catch (Exception e) {
-            e.printStackTrace();
-            TextView errorView = new TextView(this);
-            errorView.setText("Error loading WebView: " + e.getMessage());
-            errorView.setGravity(Gravity.CENTER);
-            setContentView(errorView);
-        }
+        // Set a basic background color immediately
+        getWindow().setBackgroundDrawableResource(android.R.color.black);
+
+        // Small delay to let the system settle
+        new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+            try {
+                // Try to initialize WebView
+                webView = new WebView(this);
+                setupWebView();
+                setContentView(webView);
+            } catch (Exception e) {
+                e.printStackTrace();
+                showErrorView("WebView Error: " + e.getMessage());
+            }
+        }, 100);
 
         checkPermissions();
+    }
+
+    private void setupWebView() {
+        WebSettings webSettings = webView.getSettings();
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        
+        // Optimize for watch display
+        webSettings.setUseWideViewPort(true);
+        webSettings.setLoadWithOverviewMode(true);
+        
+        webView.setWebViewClient(new WebViewClient());
+        webView.addJavascriptInterface(new WebAppInterface(this), "AndroidApp");
+        
+        // Load the shared app URL
+        webView.loadUrl("https://ais-pre-y3k5cv2ixjhrkidsg7weac-327783083381.europe-west1.run.app");
+    }
+
+    private void showErrorView(String message) {
+        TextView errorView = new TextView(this);
+        errorView.setText(message + "\n\nPlease ensure Android System WebView is updated.");
+        errorView.setTextColor(android.graphics.Color.WHITE);
+        errorView.setGravity(Gravity.CENTER);
+        errorView.setPadding(20, 20, 20, 20);
+        setContentView(errorView);
     }
 
     public class WebAppInterface {
