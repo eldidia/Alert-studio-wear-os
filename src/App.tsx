@@ -214,7 +214,11 @@ export default function App() {
   const [filterToCity, setFilterToCity] = useState(false);
   const [filterByTypes, setFilterByTypes] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [lang, setLang] = useState<Language>('he');
+  const [lang, setLang] = useState<Language>(() => {
+    const saved = localStorage.getItem('watchAlertLang');
+    if (saved && ['he', 'en', 'ar', 'ru'].includes(saved)) return saved as Language;
+    return 'he';
+  });
   const [cities, setCities] = useState<string[]>(FALLBACK_CITIES);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [showCitySelector, setShowCitySelector] = useState(false);
@@ -227,21 +231,25 @@ export default function App() {
 
   const t: any = (translations as any)[lang];
 
+  useEffect(() => {
+    localStorage.setItem('watchAlertLang', lang);
+  }, [lang]);
+
   // Sync with Android Native App
   useEffect(() => {
     if ((window as any).AndroidApp && (window as any).AndroidApp.updateConfig) {
       const config = {
         isMonitoring,
         profiles,
-        // Legacy support for older versions of the service if needed
         userCity,
         filterToCity,
         filterByTypes,
-        selectedTypes
+        selectedTypes,
+        lang
       };
       (window as any).AndroidApp.updateConfig(JSON.stringify(config));
     }
-  }, [userCity, filterToCity, isMonitoring, profiles]);
+  }, [userCity, filterToCity, isMonitoring, profiles, lang, selectedTypes, filterByTypes]);
 
   // Get user location and cities list
   useEffect(() => {
@@ -446,7 +454,7 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: lang === 'he' ? "ירי רקטות וטילים" : "Rockets & Missiles",
-          data: ["אשדוד", "חיפה", "תל אביב - יפו"]
+          data: ["אשדוד - ח, ט, י, יא, יב, טו, יז, מרינה, סיטי, רובע מיוחד", "חיפה - מערב", "תל אביב - עבר הירקון"]
         })
       });
     } catch (e) {

@@ -47,7 +47,7 @@ public class ConfigManager {
         try {
             JSONObject config = new JSONObject();
             config.put("isMonitoring", true);
-            config.put("language", "he");
+            config.put("lang", "he");
             config.put("profiles", new JSONArray());
             return config;
         } catch (Exception e) {

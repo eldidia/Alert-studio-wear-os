@@ -129,9 +129,18 @@ public class SettingsActivity extends Activity {
 
         backButton.setOnClickListener(v -> finish());
 
-        updateProfilesList();
-        setupTypesList();
-        setupCitiesList();
+        String lang = config.optString("lang", "he");
+        updateProfilesList(lang);
+        setupTypesList(lang);
+        setupCitiesList(lang);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        JSONObject config = ConfigManager.getConfig(this);
+        String lang = config.optString("lang", "he");
+        updateProfilesList(lang);
     }
 
     private void updateConfig(String key, Object value) {
@@ -147,9 +156,9 @@ public class SettingsActivity extends Activity {
     private void setLanguage(String lang) {
         updateConfig("lang", lang);
         updateLangButtons(lang);
-        setupTypesList();
-        setupCitiesList();
-        updateProfilesList();
+        setupTypesList(lang);
+        setupCitiesList(lang);
+        updateProfilesList(lang);
     }
 
     private void updateLangButtons(String currentLang) {
@@ -242,10 +251,9 @@ public class SettingsActivity extends Activity {
         }
     }
 
-    private void setupTypesList() {
+    private void setupTypesList(String lang) {
         typesContainer.removeAllViews();
         JSONObject config = ConfigManager.getConfig(this);
-        String lang = config.optString("lang", "he");
         JSONArray selectedTypes = config.optJSONArray("selectedTypes");
         if (selectedTypes == null) selectedTypes = new JSONArray();
 
@@ -273,7 +281,7 @@ public class SettingsActivity extends Activity {
 
             typeBtn.setOnClickListener(v -> {
                 toggleSelectedType(heName);
-                setupTypesList();
+                setupTypesList(lang);
             });
 
             typesContainer.addView(typeBtn);
@@ -307,7 +315,7 @@ public class SettingsActivity extends Activity {
         }
     }
 
-    private void setupCitiesList() {
+    private void setupCitiesList(String lang) {
         citiesContainer.removeAllViews();
         JSONObject config = ConfigManager.getConfig(this);
         String currentCity = config.optString("userCity", "");
@@ -326,14 +334,14 @@ public class SettingsActivity extends Activity {
 
             cityBtn.setOnClickListener(v -> {
                 updateConfig("userCity", isSelected ? "" : city);
-                setupCitiesList();
+                setupCitiesList(lang);
             });
 
             citiesContainer.addView(cityBtn);
         }
     }
 
-    private void updateProfilesList() {
+    private void updateProfilesList(String lang) {
         profilesContainer.removeAllViews();
         JSONObject config = ConfigManager.getConfig(this);
         JSONArray profiles = config.optJSONArray("profiles");
@@ -349,10 +357,14 @@ public class SettingsActivity extends Activity {
                     TextView detailsView = itemView.findViewById(R.id.profileDetails);
 
                     boolean enabled = profile.optBoolean("enabled", true);
-                    nameView.setText(profile.optString("name") + (enabled ? "" : " (Disabled)"));
+                    String disabledText = lang.equals("he") ? " (מושבת)" : 
+                                        lang.equals("ar") ? " (معطل)" : 
+                                        lang.equals("ru") ? " (Отключено)" : " (Disabled)";
+                    
+                    nameView.setText(profile.optString("name") + (enabled ? "" : disabledText));
                     nameView.setTextColor(enabled ? Color.WHITE : Color.GRAY);
                     
-                    detailsView.setText(profile.optString("city", "All Cities"));
+                    detailsView.setText(profile.optString("city", lang.equals("he") ? "כל הערים" : "All Cities"));
 
                     itemView.setOnClickListener(v -> {
                         Intent intent = new Intent(this, ProfileEditorActivity.class);

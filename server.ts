@@ -70,32 +70,6 @@ interface AlertLogEntry {
 let alertHistory: AlertLogEntry[] = [];
 let simulatedAlert: AlertLogEntry | null = null;
 
-const CITY_AGGREGATIONS: Record<string, string> = {
-  "אשדוד": "אשדוד",
-  "חיפה": "חיפה",
-  "ירושלים": "ירושלים",
-  "תל אביב": "תל אביב - יפו",
-  "באר שבע": "באר שבע",
-  "ראשון לציון": "ראשון לציון",
-  "פתח תקווה": "פתח תקווה",
-  "נתניה": "נתניה",
-  "חולון": "חולון",
-  "רמת גן": "רמת גן",
-};
-
-function smartMapCities(cities: string[]): string[] {
-  const result = new Set(cities);
-  for (const city of cities) {
-    for (const [parent, fullName] of Object.entries(CITY_AGGREGATIONS)) {
-      if (city.includes(parent)) {
-        result.add(parent);
-        result.add(fullName);
-      }
-    }
-  }
-  return Array.from(result);
-}
-
 function processCities(jsonData: any, lang: string | any): string[] {
   let cityNames: string[] = [];
   if (Array.isArray(jsonData)) {
@@ -171,11 +145,6 @@ async function startServer() {
       try {
         const jsonData = JSON.parse(data);
         
-        // Smart Mapping
-        if (jsonData.data && Array.isArray(jsonData.data)) {
-          jsonData.data = smartMapCities(jsonData.data);
-        }
-
         // Log the alert if it's new
         if (jsonData.id !== "0") {
           const alreadyLogged = alertHistory.find(a => a.id === jsonData.id);
@@ -370,7 +339,7 @@ async function startServer() {
     simulatedAlert = {
       id: "sim-" + Date.now(),
       title: title || "התרעה מדמה",
-      data: data || ["אשדוד", "חיפה"],
+      data: data || ["אשדוד - ח, ט, י, יא, יב, טו, יז, מרינה, סיטי, רובע מיוחד", "חיפה - מערב"],
       timestamp: new Date().toISOString(),
       isSimulated: true
     };
