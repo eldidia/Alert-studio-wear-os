@@ -75,6 +75,19 @@ public class MainActivity extends Activity {
             }
         }
 
+        // Show Global City Filter if active
+        if (config.optBoolean("filterToCity", false)) {
+            String userCity = config.optString("userCity", "");
+            if (!userCity.isEmpty()) {
+                TextView cityHeader = new TextView(this);
+                cityHeader.setText("City Filter: " + userCity);
+                cityHeader.setTextColor(Color.parseColor("#2563eb"));
+                cityHeader.setTextSize(9);
+                cityHeader.setPadding(20, 5, 0, 5);
+                profilesContainer.addView(cityHeader);
+            }
+        }
+
         JSONArray profiles = config.optJSONArray("profiles");
         if (profiles != null && profiles.length() > 0) {
             for (int i = 0; i < profiles.length(); i++) {

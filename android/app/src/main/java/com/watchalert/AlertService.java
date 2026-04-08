@@ -122,6 +122,23 @@ public class AlertService extends Service {
                                                 return; // Skip this alert entirely
                                             }
                                         }
+
+                                        // Global City Filter
+                                        boolean filterToCity = config.optBoolean("filterToCity", false);
+                                        String userCity = config.optString("userCity", "");
+                                        if (filterToCity && !userCity.isEmpty()) {
+                                            boolean globalCityMatch = false;
+                                            JSONArray dataArray = json.getJSONArray("data");
+                                            for (int i = 0; i < dataArray.length(); i++) {
+                                                if (dataArray.getString(i).contains(userCity)) {
+                                                    globalCityMatch = true;
+                                                    break;
+                                                }
+                                            }
+                                            if (!globalCityMatch) {
+                                                return; // Skip this alert entirely
+                                            }
+                                        }
                                     } catch (Exception e) {
                                         // Fallback to legacy if JSON fails
                                         isMonitoring = sharedPref.getBoolean("isMonitoring", true);

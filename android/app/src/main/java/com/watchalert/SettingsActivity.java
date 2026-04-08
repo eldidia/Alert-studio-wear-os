@@ -14,7 +14,9 @@ import org.json.JSONObject;
 public class SettingsActivity extends Activity {
     private Switch monitoringSwitch;
     private Switch typeFilterSwitch;
+    private Switch cityFilterSwitch;
     private LinearLayout typesContainer;
+    private LinearLayout citiesContainer;
     private LinearLayout profilesContainer;
 
     private static final String[][] ALERT_TYPES = {
@@ -27,6 +29,10 @@ public class SettingsActivity extends Activity {
         {"אירוע רדיולוגי", "Radiological"}
     };
 
+    private static final String[] MAJOR_CITIES = {
+        "תל אביב - יפו", "ירושלים", "חיפה", "באר שבע", "אשדוד", "נתניה", "ראשון לציון", "פתח תקווה"
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,7 +40,9 @@ public class SettingsActivity extends Activity {
 
         monitoringSwitch = findViewById(R.id.monitoringSwitch);
         typeFilterSwitch = findViewById(R.id.typeFilterSwitch);
+        cityFilterSwitch = findViewById(R.id.cityFilterSwitch);
         typesContainer = findViewById(R.id.typesContainer);
+        citiesContainer = findViewById(R.id.citiesContainer);
         profilesContainer = findViewById(R.id.settingsProfilesContainer);
         Button addProfileButton = findViewById(R.id.addProfileButton);
         Button backButton = findViewById(R.id.backButton);
@@ -42,7 +50,10 @@ public class SettingsActivity extends Activity {
         JSONObject config = ConfigManager.getConfig(this);
         monitoringSwitch.setChecked(config.optBoolean("isMonitoring", true));
         typeFilterSwitch.setChecked(config.optBoolean("filterByTypes", false));
+        cityFilterSwitch.setChecked(config.optBoolean("filterToCity", false));
+        
         typesContainer.setVisibility(typeFilterSwitch.isChecked() ? View.VISIBLE : View.GONE);
+        citiesContainer.setVisibility(cityFilterSwitch.isChecked() ? View.VISIBLE : View.GONE);
 
         monitoringSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             updateConfig("isMonitoring", isChecked);
@@ -53,6 +64,11 @@ public class SettingsActivity extends Activity {
             typesContainer.setVisibility(isChecked ? View.VISIBLE : View.GONE);
         });
 
+        cityFilterSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateConfig("filterToCity", isChecked);
+            citiesContainer.setVisibility(isChecked ? View.VISIBLE : View.GONE);
+        });
+
         addProfileButton.setOnClickListener(v -> {
             addDefaultProfile();
         });
@@ -61,6 +77,7 @@ public class SettingsActivity extends Activity {
 
         updateProfilesList();
         setupTypesList();
+        setupCitiesList();
     }
 
     private void updateConfig(String key, Object value) {
@@ -134,6 +151,32 @@ public class SettingsActivity extends Activity {
             ConfigManager.saveConfig(this, config);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void setupCitiesList() {
+        citiesContainer.removeAllViews();
+        JSONObject config = ConfigManager.getConfig(this);
+        String currentCity = config.optString("userCity", "");
+
+        for (String city : MAJOR_CITIES) {
+            Button cityBtn = new Button(this);
+            cityBtn.setText(city);
+            cityBtn.setTextSize(10);
+            
+            boolean isSelected = city.equals(currentCity);
+
+            cityBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
+                isSelected ? Color.parseColor("#2563eb") : Color.parseColor("#222222")
+            ));
+            cityBtn.setTextColor(Color.WHITE);
+
+            cityBtn.setOnClickListener(v -> {
+                updateConfig("userCity", isSelected ? "" : city);
+                setupCitiesList();
+            });
+
+            citiesContainer.addView(cityBtn);
         }
     }
 
