@@ -58,6 +58,44 @@ const citiesCache: Record<string, string[]> = {
   en: FALLBACK_CITIES_EN
 };
 
+// Alert History and Simulation
+interface AlertLogEntry {
+  id: string;
+  title: string;
+  data: string[];
+  timestamp: string;
+  isSimulated?: boolean;
+}
+
+let alertHistory: AlertLogEntry[] = [];
+let simulatedAlert: AlertLogEntry | null = null;
+
+const CITY_AGGREGATIONS: Record<string, string> = {
+  "אשדוד": "אשדוד",
+  "חיפה": "חיפה",
+  "ירושלים": "ירושלים",
+  "תל אביב": "תל אביב - יפו",
+  "באר שבע": "באר שבע",
+  "ראשון לציון": "ראשון לציון",
+  "פתח תקווה": "פתח תקווה",
+  "נתניה": "נתניה",
+  "חולון": "חולון",
+  "רמת גן": "רמת גן",
+};
+
+function smartMapCities(cities: string[]): string[] {
+  const result = new Set(cities);
+  for (const city of cities) {
+    for (const [parent, fullName] of Object.entries(CITY_AGGREGATIONS)) {
+      if (city.includes(parent)) {
+        result.add(parent);
+        result.add(fullName);
+      }
+    }
+  }
+  return Array.from(result);
+}
+
 function processCities(jsonData: any, lang: string | any): string[] {
   let cityNames: string[] = [];
   if (Array.isArray(jsonData)) {
@@ -132,6 +170,32 @@ async function startServer() {
 
       try {
         const jsonData = JSON.parse(data);
+        
+        // Smart Mapping
+        if (jsonData.data && Array.isArray(jsonData.data)) {
+          jsonData.data = smartMapCities(jsonData.data);
+        }
+
+        // Log the alert if it's new
+        if (jsonData.id !== "0") {
+          const alreadyLogged = alertHistory.find(a => a.id === jsonData.id);
+          if (!alreadyLogged) {
+            alertHistory.unshift({
+              ...jsonData,
+              timestamp: new Date().toISOString()
+            });
+            if (alertHistory.length > 50) alertHistory.pop();
+          }
+        }
+
+        // Inject simulated alert if active
+        if (simulatedAlert) {
+          // If there are real alerts, we merge them or prioritize simulation for testing
+          if (jsonData.id === "0") {
+            return res.json(simulatedAlert);
+          }
+        }
+
         res.json(jsonData);
       } catch (e) {
         res.status(500).json({ error: "Malformed JSON", raw: data.substring(0, 100) });
@@ -291,13 +355,37 @@ async function startServer() {
   // Test Alert API
   app.get("/api/test-alert", (req, res) => {
     const testAlert = {
-      id: Date.now().toString(),
+      id: "test-" + Date.now(),
       title: "התרעה לבדיקה",
       data: ["תל אביב - יפו", "ירושלים", "חיפה"],
       desc: "זוהי התרעת בדיקה בלבד",
       warning: "TEST ALERT"
     };
     res.json(testAlert);
+  });
+
+  // Simulation API
+  app.post("/api/simulate", express.json(), (req, res) => {
+    const { title, data } = req.body;
+    simulatedAlert = {
+      id: "sim-" + Date.now(),
+      title: title || "התרעה מדמה",
+      data: data || ["אשדוד", "חיפה"],
+      timestamp: new Date().toISOString(),
+      isSimulated: true
+    };
+    
+    // Auto-clear simulation after 30 seconds
+    setTimeout(() => {
+      simulatedAlert = null;
+    }, 30000);
+
+    res.json({ status: "Simulation active for 30s", alert: simulatedAlert });
+  });
+
+  // History API
+  app.get("/api/history", (req, res) => {
+    res.json(alertHistory);
   });
 
   // Vite middleware for development

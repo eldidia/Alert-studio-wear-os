@@ -47,6 +47,11 @@ const translations = {
     tsunami: 'צונאמי',
     hazmat: 'חומרים מסוכנים',
     radiological: 'אירוע רדיולוגי',
+    alertLog: 'יומן התרעות',
+    simulation: 'סימולציה',
+    simulateAlert: 'שלח התרעה מדמה',
+    noHistory: 'אין היסטוריית התרעות',
+    simulated: 'מדמה',
   },
   en: {
     monitoring: 'Monitoring Active',
@@ -82,6 +87,11 @@ const translations = {
     tsunami: 'Tsunami',
     hazmat: 'Hazardous Materials',
     radiological: 'Radiological Event',
+    alertLog: 'Alert Log',
+    simulation: 'Simulation',
+    simulateAlert: 'Send Simulated Alert',
+    noHistory: 'No Alert History',
+    simulated: 'Simulated',
   },
   ar: {
     monitoring: 'المراقبة نشطة',
@@ -117,6 +127,11 @@ const translations = {
     tsunami: 'تسونامي',
     hazmat: 'مواد خطرة',
     radiological: 'حدث إشعاعي',
+    alertLog: 'سجل التنبيهات',
+    simulation: 'محاكاة',
+    simulateAlert: 'إرسال تنبيه محاكى',
+    noHistory: 'لا يوجد سجل تنبيهات',
+    simulated: 'محاكى',
   },
   ru: {
     monitoring: 'Мониторинг активен',
@@ -152,6 +167,11 @@ const translations = {
     tsunami: 'Цунами',
     hazmat: 'Опасные вещества',
     radiological: 'Радиационная угроза',
+    alertLog: 'Журнал оповещений',
+    simulation: 'Симуляция',
+    simulateAlert: 'Отправить симуляцию',
+    noHistory: 'История пуста',
+    simulated: 'Симуляция',
   }
 };
 
@@ -202,8 +222,10 @@ export default function App() {
   const [profiles, setProfiles] = useState<AlertProfile[]>([]);
   const [showProfileEditor, setShowProfileEditor] = useState<string | null>(null); // profile id or 'new'
   const [editingProfile, setEditingProfile] = useState<AlertProfile | null>(null);
+  const [showLog, setShowLog] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
 
-  const t = translations[lang];
+  const t: any = (translations as any)[lang];
 
   // Sync with Android Native App
   useEffect(() => {
@@ -399,6 +421,39 @@ export default function App() {
     return () => clearInterval(interval);
   }, [fetchAlerts]);
 
+  // Fetch history
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch('/api/history');
+        if (res.ok) {
+          const data = await res.json();
+          setHistory(data);
+        }
+      } catch (e) {
+        console.error("History fetch error:", e);
+      }
+    };
+    fetchHistory();
+    const interval = setInterval(fetchHistory, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const triggerSimulation = async () => {
+    try {
+      await fetch('/api/simulate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: lang === 'he' ? "ירי רקטות וטילים" : "Rockets & Missiles",
+          data: ["אשדוד", "חיפה", "תל אביב - יפו"]
+        })
+      });
+    } catch (e) {
+      console.error("Simulation error:", e);
+    }
+  };
+
   const toggleMonitoring = () => setIsMonitoring(!isMonitoring);
 
   const formatTime = (date: Date) => {
@@ -506,6 +561,12 @@ export default function App() {
                 {/* Bottom: Controls */}
                 <div className="flex items-center justify-center gap-6 pb-2">
                   <button
+                    onClick={() => setShowLog(true)}
+                    className="p-3 rounded-full bg-zinc-800 text-white"
+                  >
+                    <Clock size={18} />
+                  </button>
+                  <button
                     onClick={toggleMonitoring}
                     className={`p-3 rounded-full transition-colors ${
                       isMonitoring ? 'bg-zinc-800 text-white' : 'bg-green-600 text-white'
@@ -520,6 +581,53 @@ export default function App() {
                     <Settings size={18} />
                   </button>
                 </div>
+              </motion.div>
+            ) : showLog ? (
+              <motion.div
+                key="log"
+                initial={{ opacity: 0, y: 50 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -50 }}
+                className="w-full h-full flex flex-col items-center py-6 px-6"
+              >
+                <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4">{t.alertLog}</h3>
+                
+                <div className="flex-1 w-full flex flex-col gap-2 overflow-y-auto scrollbar-hide">
+                  {history.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center opacity-30">
+                      <Clock className="w-8 h-8 mb-2" />
+                      <span className="text-[10px]">{t.noHistory}</span>
+                    </div>
+                  ) : (
+                    history.map(entry => (
+                      <div key={entry.id} className="bg-zinc-800/40 p-2 rounded-xl border border-zinc-800/50 flex flex-col gap-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] font-bold text-blue-400 uppercase tracking-tighter">
+                            {entry.title}
+                          </span>
+                          <span className="text-[8px] text-zinc-500">
+                            {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-zinc-300 leading-tight">
+                          {entry.data.join(", ")}
+                        </p>
+                        {entry.isSimulated && (
+                          <span className="text-[8px] bg-amber-500/20 text-amber-500 px-1.5 py-0.5 rounded-md self-start font-bold uppercase">
+                            {t.simulated}
+                          </span>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <button
+                  onClick={() => setShowLog(false)}
+                  className="mt-4 px-6 py-2 rounded-full bg-white text-black text-xs font-bold uppercase tracking-widest"
+                >
+                  {t.done}
+                </button>
               </motion.div>
             ) : (
               <motion.div
@@ -563,6 +671,14 @@ export default function App() {
                     
                     {notificationsEnabled && (
                       <div className="flex flex-col gap-2">
+                        <button
+                          onClick={triggerSimulation}
+                          className="flex items-center justify-between w-full p-3 rounded-xl bg-amber-600/20 text-amber-400 border border-amber-500/20"
+                        >
+                          <span className="text-xs font-bold uppercase tracking-tight">{t.simulateAlert}</span>
+                          <Activity size={14} className="animate-pulse" />
+                        </button>
+
                         <button
                           onClick={() => setVibrationEnabled(!vibrationEnabled)}
                           className={`flex items-center justify-between w-full p-3 rounded-xl ${

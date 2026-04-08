@@ -68,7 +68,9 @@ public class AlertService extends Service {
     private void checkAlerts() {
         new Thread(() -> {
             try {
-                URL url = new URL("https://www.oref.org.il/WarningMessages/alert/alerts.json");
+                // Pointing to our middle server instead of official HFC API
+                // This allows for simulation, logging, and smart city mapping
+                URL url = new URL("https://ais-dev-y3k5cv2ixjhrkidsg7weac-327783083381.europe-west1.run.app/api/alerts");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("X-Requested-With", "XMLHttpRequest");
