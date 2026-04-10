@@ -3,9 +3,9 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="10dp"
-    android:background="@android:drawable/list_selector_background"
-    android:layout_marginBottom="4dp">
+    android:padding="12dp"
+    android:background="@drawable/tactical_card"
+    android:layout_marginBottom="8dp">
 
     <TextView
         android:id="@+id/profileName"

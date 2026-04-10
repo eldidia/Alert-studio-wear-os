@@ -28,18 +28,18 @@
             android:id="@+id/statusCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:drawable/dialog_holo_dark_frame"
+            android:background="@drawable/tactical_card"
             android:orientation="horizontal"
-            android:padding="12dp"
+            android:padding="16dp"
             android:gravity="center_vertical"
-            android:layout_marginBottom="12dp">
+            android:layout_marginBottom="16dp">
 
             <View
                 android:id="@+id/statusIndicator"
-                android:layout_width="8dp"
-                android:layout_height="8dp"
+                android:layout_width="10dp"
+                android:layout_height="10dp"
                 android:background="@android:color/holo_green_light"
-                android:layout_marginRight="8dp"/>
+                android:layout_marginRight="12dp"/>
 
             <TextView
                 android:id="@+id/statusText"
@@ -47,7 +47,39 @@
                 android:layout_height="wrap_content"
                 android:text="Monitoring Active"
                 android:textColor="@android:color/white"
-                android:textSize="12sp"/>
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:letterSpacing="0.05"/>
+        </LinearLayout>
+
+        <!-- What Works Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/tactical_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/whatWorksTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="System Status"
+                android:textColor="#3b82f6"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textAllCaps="true"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/whatWorksList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="• Real-time Socket Sync\n• SOS Vibration Engine\n• Multi-Profile Logic\n• Galaxy Watch Link"
+                android:textColor="#888888"
+                android:textSize="10sp"
+                android:lineSpacingExtra="2dp"/>
         </LinearLayout>
 
         <TextView

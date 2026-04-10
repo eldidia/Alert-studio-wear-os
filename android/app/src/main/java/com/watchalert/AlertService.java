@@ -109,7 +109,12 @@ public class AlertService extends Service {
                         try {
                             JSONObject json = new JSONObject(jsonStr);
                             String id = json.getString("id");
-                            if (!id.equals(lastAlertId) && !id.equals("0")) {
+                            if (id.equals("0")) {
+                                lastAlertId = "0";
+                                return;
+                            }
+                            
+                            if (!id.equals(lastAlertId)) {
                                 lastAlertId = id;
                                 
                                 SharedPreferences sharedPref = getSharedPreferences("WatchAlertPrefs", Context.MODE_PRIVATE);

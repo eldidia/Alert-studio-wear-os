@@ -64,29 +64,45 @@ public class MainActivity extends Activity {
         else if (lang.equals("ru")) status = isMonitoring ? "Мониторинг активен" : "Мониторинг приостановлен";
 
         statusText.setText(status);
-        statusIndicator.setBackgroundColor(isMonitoring ? Color.GREEN : Color.RED);
+        statusIndicator.setBackgroundColor(isMonitoring ? Color.parseColor("#3b82f6") : Color.RED);
+        if (isMonitoring) {
+            statusIndicator.startAnimation(android.view.animation.AnimationUtils.loadAnimation(this, R.anim.pulse));
+        } else {
+            statusIndicator.clearAnimation();
+        }
 
         // Update other labels
         TextView activeProfilesLabel = findViewById(R.id.activeProfilesLabel);
         Button testButton = findViewById(R.id.testButton);
         Button settingsButton = findViewById(R.id.settingsButton);
 
+        TextView versionText = findViewById(R.id.versionText);
+        versionText.setText("v1.4 Native");
+
         if (lang.equals("he")) {
             activeProfilesLabel.setText("פרופילים פעילים");
             testButton.setText("בדיקת התרעה");
             settingsButton.setText("הגדרות");
+            ((TextView)findViewById(R.id.whatWorksTitle)).setText("סטטוס מערכת");
+            ((TextView)findViewById(R.id.whatWorksList)).setText("• סנכרון בזמן אמת\n• מנוע רטט SOS\n• לוגיקת פרופילים\n• קישור ל-Galaxy Watch");
         } else if (lang.equals("ar")) {
             activeProfilesLabel.setText("الملفات الشخصية النشطة");
             testButton.setText("اختبار التنبيه");
             settingsButton.setText("الإعدادات");
+            ((TextView)findViewById(R.id.whatWorksTitle)).setText("حالة النظام");
+            ((TextView)findViewById(R.id.whatWorksList)).setText("• مزامنة في الوقت الحقيقي\n• محرك اهتزاز SOS\n• منطق الملفات الشخصية\n• الربط بـ Galaxy Watch");
         } else if (lang.equals("ru")) {
             activeProfilesLabel.setText("Активные профили");
             testButton.setText("Тестовый сигнал");
             settingsButton.setText("Настройки");
+            ((TextView)findViewById(R.id.whatWorksTitle)).setText("Статус системы");
+            ((TextView)findViewById(R.id.whatWorksList)).setText("• Синхронизация в реальном времени\n• Вибромотор SOS\n• Логика профилей\n• Связь с Galaxy Watch");
         } else {
             activeProfilesLabel.setText("Active Profiles");
             testButton.setText("Test Alert");
             settingsButton.setText("Settings");
+            ((TextView)findViewById(R.id.whatWorksTitle)).setText("System Status");
+            ((TextView)findViewById(R.id.whatWorksList)).setText("• Real-time Socket Sync\n• SOS Vibration Engine\n• Smart Profile Logic\n• Galaxy Watch Link");
         }
 
         profilesContainer.removeAllViews();

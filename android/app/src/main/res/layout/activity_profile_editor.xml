@@ -23,81 +23,107 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="16dp"/>
 
-        <TextView
-            android:id="@+id/nameLabel"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Profile Name"
-            android:textColor="#888888"
-            android:textSize="10sp"
-            android:textAllCaps="true"
-            android:layout_marginBottom="4dp"/>
+            android:background="@drawable/tactical_card"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
 
-        <EditText
-            android:id="@+id/profileNameInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#222222"
-            android:padding="12dp"
-            android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:hint="Home, Work, etc."
-            android:textColorHint="#444444"
-            android:layout_marginBottom="16dp"/>
+            <TextView
+                android:id="@+id/nameLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Profile Name"
+                android:textColor="#3b82f6"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textAllCaps="true"
+                android:layout_marginBottom="8dp"/>
 
-        <TextView
-            android:id="@+id/cityLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="City (Hebrew)"
-            android:textColor="#888888"
-            android:textSize="10sp"
-            android:textAllCaps="true"
-            android:layout_marginBottom="4dp"/>
-
-        <EditText
-            android:id="@+id/profileCityInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#222222"
-            android:padding="12dp"
-            android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:hint="e.g. תל אביב - יפו"
-            android:textColorHint="#444444"
-            android:layout_marginBottom="4dp"/>
+            <EditText
+                android:id="@+id/profileNameInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#222222"
+                android:padding="12dp"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:hint="Home, Work, etc."
+                android:textColorHint="#444444"/>
+        </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/citySuggestionsContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/tactical_card"
             android:orientation="vertical"
-            android:layout_marginBottom="16dp"
-            android:visibility="gone"/>
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/cityLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="City (Hebrew)"
+                android:textColor="#3b82f6"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textAllCaps="true"
+                android:layout_marginBottom="8dp"/>
+
+            <EditText
+                android:id="@+id/profileCityInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#222222"
+                android:padding="12dp"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:hint="e.g. תל אביב - יפו"
+                android:textColorHint="#444444"
+                android:layout_marginBottom="4dp"/>
+
+            <LinearLayout
+                android:id="@+id/citySuggestionsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"/>
+
+            <LinearLayout
+                android:id="@+id/majorCitiesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
+        </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/majorCitiesContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/tactical_card"
             android:orientation="vertical"
-            android:layout_marginBottom="16dp"/>
+            android:padding="16dp"
+            android:layout_marginBottom="16dp">
 
-        <TextView
-            android:id="@+id/typesLabel"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Alert Types"
-            android:textColor="#888888"
-            android:textSize="10sp"
-            android:textAllCaps="true"
-            android:layout_marginBottom="8dp"/>
+            <TextView
+                android:id="@+id/typesLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Alert Types"
+                android:textColor="#3b82f6"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textAllCaps="true"
+                android:layout_marginBottom="8dp"/>
 
-        <LinearLayout
-            android:id="@+id/profileTypesContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="24dp"/>
+            <LinearLayout
+                android:id="@+id/profileTypesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"/>
+        </LinearLayout>
 
         <Button
             android:id="@+id/saveProfileButton"
