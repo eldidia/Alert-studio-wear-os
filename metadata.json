@@ -1,5 +1,5 @@
 {
   "name": "WatchAlert",
-  "description": "Home Front Command emergency alerts optimized for Samsung Smartwatch displays.",
+  "description": "v1.4 Native. High-precision Home Front Command alerts with real-time sync, SOS vibration, and Galaxy Watch optimization.",
   "requestFramePermissions": ["geolocation"]
 }

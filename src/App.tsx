@@ -26,7 +26,21 @@ const translations = {
     done: 'סיום',
     selectCity: 'בחר עיר',
     language: 'שפה',
-    version: 'גרסה 1.2. ניטור בזמן אמת של פיקוד העורף.',
+    version: 'גרסה 1.4 Native. ניטור בזמן אמת של פיקוד העורף.',
+    whatWorks: 'מה עובד:',
+    worksList: [
+      'ניטור בזמן אמת (Socket.io + Polling)',
+      'זיהוי מיקום אוטומטי',
+      'התראות דחיפה ורטט (SOS)',
+      'ניהול פרופילים מרובים',
+      'סנכרון עם אפליקציית אנדרואיד',
+      'תמיכה מלאה ב-Galaxy Watch'
+    ],
+    whatDoesntWork: 'מגבלות ידועות:',
+    doesntWorkList: [
+      'התראות בדפדפן עשויות להיחסם במצב תצוגה מקדימה',
+      'דיוק המיקום תלוי בהרשאות המכשיר'
+    ],
     noAlerts: 'אין התרעות',
     connectionError: 'שגיאת חיבור',
     accessDenied: 'גישה נדחתה (403)',
@@ -71,7 +85,21 @@ const translations = {
     done: 'Done',
     selectCity: 'Select City',
     language: 'Language',
-    version: 'v1.2. Real-time Home Front Command alerts.',
+    version: 'v1.4 Native. Real-time Home Front Command alerts.',
+    whatWorks: 'What Works:',
+    worksList: [
+      'Real-time Monitoring (Socket.io + Polling)',
+      'Automatic Location Detection',
+      'Push Notifications & SOS Vibration',
+      'Multi-Profile Management',
+      'Android App Synchronization',
+      'Galaxy Watch Optimization'
+    ],
+    whatDoesntWork: 'Known Limitations:',
+    doesntWorkList: [
+      'Browser notifications may be blocked in preview mode',
+      'Location accuracy depends on device permissions'
+    ],
     noAlerts: 'No Alerts',
     connectionError: 'Connection Error',
     accessDenied: 'Access Denied (403)',
@@ -232,6 +260,16 @@ const ALERT_TYPES = [
   { id: 'radiological', he: 'אירוע רדיולוגי', en: 'Radiological Event' },
   { id: 'nonConventional', he: 'ירי טילים בלתי קונבנציונליים', en: 'Non-Conventional Missiles' },
 ];
+
+const WatchAlertIcon = ({ className = "w-12 h-12" }: { className?: string }) => (
+  <div className={`relative ${className}`}>
+    <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
+    <div className="relative flex items-center justify-center w-full h-full bg-zinc-900 rounded-full border-2 border-zinc-800 shadow-inner">
+      <ShieldAlert className="w-1/2 h-1/2 text-blue-500" />
+      <div className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-zinc-900 animate-ping" />
+    </div>
+  </div>
+);
 
 export default function App() {
   const [alerts, setAlerts] = useState<Alert | null>(null);
@@ -667,6 +705,7 @@ export default function App() {
   return (
     <div className={`watch-container ${lang === 'he' || lang === 'ar' ? 'rtl' : 'ltr'}`} dir={lang === 'he' || lang === 'ar' ? 'rtl' : 'ltr'}>
       <div className={`watch-face ${alerts ? 'alert-active' : ''}`}>
+        <div className="scanline" />
         {alerts && <div className="alert-bg-anim" />}
         <div className="watch-inner relative z-10">
           <AnimatePresence mode="wait">
@@ -680,9 +719,12 @@ export default function App() {
               >
                 {/* Top: Time and Status */}
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-4xl font-mono font-bold tracking-tighter">
-                    {formatTime(currentTime)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-4xl font-mono font-bold tracking-tighter text-white">
+                      {formatTime(currentTime)}
+                    </span>
+                    <div className={`w-2 h-2 rounded-full ${healthInfo?.socketStatus?.startsWith('Connected') ? 'bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-zinc-700'}`} />
+                  </div>
                   <div className="flex items-center gap-2">
                     {!isSystemActive ? (
                       <span className="flex items-center gap-1 text-[12px] text-red-500 font-bold uppercase tracking-widest">
@@ -704,7 +746,7 @@ export default function App() {
 
                 {/* Center: Alert Status */}
                 <div 
-                  className="flex-1 flex flex-col items-center justify-center w-full cursor-pointer"
+                  className="flex-1 flex flex-col items-center justify-center w-full cursor-pointer relative"
                   onClick={alerts ? stopAlert : undefined}
                 >
                   {alerts ? (
@@ -714,32 +756,35 @@ export default function App() {
                       className="flex flex-col items-center gap-2 w-full"
                     >
                       <div className="relative">
-                        <AlertTriangle className="w-12 h-12 text-red-500 pulsate-icon" />
+                        <AlertTriangle className="w-16 h-16 text-red-500 pulsate-icon" />
                         {countdown !== null && (
-                          <div className="absolute -top-1 -right-1 bg-white text-red-600 rounded-full w-6 h-6 flex items-center justify-center text-[10px] font-bold border-2 border-red-600">
+                          <div className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold border-2 border-black shadow-lg">
                             {countdown}
                           </div>
                         )}
                       </div>
-                      <h2 className="text-xl font-bold text-red-500 uppercase tracking-tight leading-none">
+                      <h2 className="text-2xl font-black text-red-500 uppercase tracking-tighter leading-none drop-shadow-[0_0_10px_rgba(239,68,68,0.5)]">
                         {t.alertActive}
                       </h2>
-                      <div className="scrolling-text-container mt-1">
+                      <div className="scrolling-text-container mt-1 bg-red-500/10 py-1 border-y border-red-500/20">
                         <p className="text-sm font-bold text-white scrolling-text">
                           {alerts.data.join(" • ")}
                         </p>
                       </div>
                       {alertCoords.length > 0 && (
-                        <div className="mt-2 flex items-center gap-1 text-[10px] text-zinc-400 bg-zinc-900/50 px-2 py-1 rounded-full border border-zinc-800">
+                        <div className="mt-2 flex items-center gap-1 text-[10px] text-zinc-400 bg-zinc-900/80 px-3 py-1 rounded-full border border-zinc-800 shadow-sm">
                           <MapPin size={10} className="text-red-500" />
-                          <span>{alertCoords[0].lat.toFixed(3)}, {alertCoords[0].lng.toFixed(3)}</span>
+                          <span className="font-mono">{alertCoords[0].lat.toFixed(3)}, {alertCoords[0].lng.toFixed(3)}</span>
                         </div>
                       )}
                     </motion.div>
                   ) : (
-                    <div className="flex flex-col items-center gap-2 opacity-40">
-                      <ShieldAlert className="w-12 h-12 text-zinc-400" />
-                      <span className="text-xs font-medium text-zinc-400">{t.everythingClear}</span>
+                    <div className="flex flex-col items-center gap-3">
+                      <WatchAlertIcon className="w-20 h-20" />
+                      <div className="flex flex-col items-center">
+                        <span className="text-sm font-bold text-zinc-200 tracking-tight">{t.everythingClear}</span>
+                        <span className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">System Standby</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1211,14 +1256,41 @@ export default function App() {
                     )}
                   </div>
 
-                  <div className="p-3 rounded-xl bg-zinc-800/50 flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium">{t.about}</span>
-                      <Info size={14} className="text-zinc-500" />
+                  <div className="p-4 rounded-2xl bg-zinc-900/80 border border-zinc-800 flex flex-col gap-3 shadow-xl">
+                    <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+                      <span className="text-xs font-bold text-zinc-200 uppercase tracking-widest">{t.about}</span>
+                      <Info size={14} className="text-blue-500" />
                     </div>
-                    <p className="text-[10px] text-zinc-500 text-left">
-                      {t.version}
-                    </p>
+                    
+                    <div className="flex flex-col gap-2">
+                      <p className="text-[10px] text-zinc-400 font-medium">
+                        {t.version}
+                      </p>
+                      
+                      <div className="flex flex-col gap-1 mt-1">
+                        <span className="text-[9px] font-bold text-blue-400 uppercase tracking-tighter">{t.whatWorks}</span>
+                        <ul className="flex flex-col gap-0.5">
+                          {t.worksList.map((item: string, i: number) => (
+                            <li key={i} className="text-[8px] text-zinc-500 flex items-center gap-1">
+                              <div className="w-1 h-1 rounded-full bg-green-500/50" />
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="flex flex-col gap-1 mt-1">
+                        <span className="text-[9px] font-bold text-amber-400 uppercase tracking-tighter">{t.whatDoesntWork}</span>
+                        <ul className="flex flex-col gap-0.5">
+                          {t.doesntWorkList.map((item: string, i: number) => (
+                            <li key={i} className="text-[8px] text-zinc-500 flex items-center gap-1">
+                              <div className="w-1 h-1 rounded-full bg-amber-500/50" />
+                              {item}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
