@@ -51,6 +51,7 @@ const translations = {
     simulation: 'סימולציה',
     simulateAlert: 'שלח התרעה מדמה',
     noHistory: 'אין היסטוריית התרעות',
+    clearHistory: 'נקה היסטוריה',
     simulated: 'מדמה',
     powerSaving: 'מצב חיסכון בסוללה',
     systemActive: 'מערכת פעילה',
@@ -95,6 +96,7 @@ const translations = {
     simulation: 'Simulation',
     simulateAlert: 'Send Simulated Alert',
     noHistory: 'No Alert History',
+    clearHistory: 'Clear History',
     simulated: 'Simulated',
     powerSaving: 'Power Saving Mode',
     systemActive: 'System Active',
@@ -139,6 +141,7 @@ const translations = {
     simulation: 'محاكاة',
     simulateAlert: 'إرسال تنبيه محاكى',
     noHistory: 'لا يوجد سجل تنبيهات',
+    clearHistory: 'مسح السجل',
     simulated: 'محاكى',
     powerSaving: 'وضع توفير الطاقة',
     systemActive: 'النظام نشط',
@@ -183,6 +186,7 @@ const translations = {
     simulation: 'Симуляция',
     simulateAlert: 'Отправить симуляцию',
     noHistory: 'История пуста',
+    clearHistory: 'Очистить историю',
     simulated: 'Симуляция',
     powerSaving: 'Энергосбережение',
     systemActive: 'Система активна',
@@ -257,6 +261,7 @@ export default function App() {
   const [editingProfile, setEditingProfile] = useState<AlertProfile | null>(null);
   const [showLog, setShowLog] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
+  const [countdown, setCountdown] = useState<number | null>(null);
 
   const t: any = (translations as any)[lang];
 
@@ -605,6 +610,52 @@ export default function App() {
     setShowProfileEditor(p.id);
   };
 
+  const clearAlertHistory = async () => {
+    try {
+      const res = await fetch('/api/history', { method: 'DELETE' });
+      if (res.ok) setHistory([]);
+    } catch (e) {
+      console.error("Clear history error:", e);
+    }
+  };
+
+  const stopAlert = () => {
+    setAlerts(null);
+    setCountdown(null);
+    if ('vibrate' in navigator) navigator.vibrate(0); // Stop vibration
+  };
+
+  // Countdown logic
+  useEffect(() => {
+    let timer: any;
+    if (alerts && alerts.data.length > 0) {
+      // Find the shortest time among all cities in the alert
+      let minTime = 90;
+      alerts.data.forEach(cityName => {
+        const city = cities.find(c => isCityMatch(cityName, c.name));
+        if (city && city.time) {
+          const t = parseInt(city.time);
+          if (!isNaN(t) && t < minTime) minTime = t;
+        }
+      });
+      
+      setCountdown(minTime);
+      
+      timer = setInterval(() => {
+        setCountdown(prev => {
+          if (prev === null || prev <= 0) {
+            clearInterval(timer);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      setCountdown(null);
+    }
+    return () => clearInterval(timer);
+  }, [alerts, cities]);
+
   return (
     <div className={`watch-container ${lang === 'he' || lang === 'ar' ? 'rtl' : 'ltr'}`} dir={lang === 'he' || lang === 'ar' ? 'rtl' : 'ltr'}>
       <div className={`watch-face ${alerts ? 'alert-active' : ''}`}>
@@ -644,14 +695,24 @@ export default function App() {
                 </div>
 
                 {/* Center: Alert Status */}
-                <div className="flex-1 flex flex-col items-center justify-center w-full">
+                <div 
+                  className="flex-1 flex flex-col items-center justify-center w-full cursor-pointer"
+                  onClick={alerts ? stopAlert : undefined}
+                >
                   {alerts ? (
                     <motion.div
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       className="flex flex-col items-center gap-2 w-full"
                     >
-                      <AlertTriangle className="w-12 h-12 text-red-500 pulsate-icon" />
+                      <div className="relative">
+                        <AlertTriangle className="w-12 h-12 text-red-500 pulsate-icon" />
+                        {countdown !== null && (
+                          <div className="absolute -top-1 -right-1 bg-white text-red-600 rounded-full w-6 h-6 flex items-center justify-center text-[10px] font-bold border-2 border-red-600">
+                            {countdown}
+                          </div>
+                        )}
+                      </div>
                       <h2 className="text-xl font-bold text-red-500 uppercase tracking-tight leading-none">
                         {t.alertActive}
                       </h2>
@@ -716,33 +777,41 @@ export default function App() {
                       <span className="text-[10px]">{t.noHistory}</span>
                     </div>
                   ) : (
-                    history.map(entry => (
-                      <div key={entry.id} className="bg-zinc-800/40 p-2 rounded-xl border border-zinc-800/50 flex flex-col gap-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[9px] font-bold text-blue-400 uppercase tracking-tighter">
-                            {entry.title}
-                          </span>
-                          <span className="text-[8px] text-zinc-500">
-                            {entry.id.startsWith('ext-') ? 'Received ' : ''}
-                            {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-zinc-300 leading-tight">
-                          {entry.data.join(", ")}
-                        </p>
-                        {entry.lat && entry.lng && (
-                          <div className="flex items-center gap-1 text-[8px] text-zinc-500">
-                            <MapPin size={8} />
-                            <span>{entry.lat.toFixed(3)}, {entry.lng.toFixed(3)}</span>
+                    <>
+                      <button
+                        onClick={clearAlertHistory}
+                        className="mb-2 w-full py-1.5 rounded-lg bg-red-500/10 text-red-500 text-[10px] font-bold uppercase tracking-widest border border-red-500/20"
+                      >
+                        {t.clearHistory}
+                      </button>
+                      {history.map(entry => (
+                        <div key={entry.id} className="bg-zinc-800/40 p-2 rounded-xl border border-zinc-800/50 flex flex-col gap-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-bold text-blue-400 uppercase tracking-tighter">
+                              {entry.title}
+                            </span>
+                            <span className="text-[8px] text-zinc-500">
+                              {entry.id.startsWith('ext-') ? 'Received ' : ''}
+                              {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                            </span>
                           </div>
-                        )}
-                        {entry.isSimulated && (
-                          <span className="text-[8px] bg-amber-500/20 text-amber-500 px-1.5 py-0.5 rounded-md self-start font-bold uppercase">
-                            {t.simulated}
-                          </span>
-                        )}
-                      </div>
-                    ))
+                          <p className="text-[10px] text-zinc-300 leading-tight">
+                            {entry.data.join(", ")}
+                          </p>
+                          {entry.lat && entry.lng && (
+                            <div className="flex items-center gap-1 text-[8px] text-zinc-500">
+                              <MapPin size={8} />
+                              <span>{entry.lat.toFixed(3)}, {entry.lng.toFixed(3)}</span>
+                            </div>
+                          )}
+                          {entry.isSimulated && (
+                            <span className="text-[8px] bg-amber-500/20 text-amber-500 px-1.5 py-0.5 rounded-md self-start font-bold uppercase">
+                              {t.simulated}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </>
                   )}
                 </div>
 

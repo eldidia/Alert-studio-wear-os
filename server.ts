@@ -454,6 +454,11 @@ async function startServer() {
     res.json(alertHistory);
   });
 
+  app.delete("/api/history", (req, res) => {
+    alertHistory = [];
+    res.json({ status: "cleared" });
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
