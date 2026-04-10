@@ -225,6 +225,7 @@ export default function App() {
   const [isMonitoring, setIsMonitoring] = useState(true);
   const [isPowerSaving, setIsPowerSaving] = useState(false);
   const [isSystemActive, setIsSystemActive] = useState(true);
+  const [healthInfo, setHealthInfo] = useState<any>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -282,6 +283,7 @@ export default function App() {
         const healthRes = await fetch('/api/health');
         if (healthRes.ok) {
           const healthData = await healthRes.json();
+          setHealthInfo(healthData);
           if (typeof healthData.active === 'boolean') {
             setIsSystemActive(healthData.active);
           }
@@ -498,8 +500,12 @@ export default function App() {
         if (res.ok) {
           const data = await res.json();
           if (isMounted) setHistory(data);
-        } else {
-          console.warn(`History fetch failed with status: ${res.status}`);
+        }
+
+        const healthRes = await fetch('/api/health');
+        if (healthRes.ok) {
+          const healthData = await healthRes.json();
+          if (isMounted) setHealthInfo(healthData);
         }
       } catch (e) {
         // Only log error if it's not a common "Failed to fetch" during server restart
@@ -1022,6 +1028,30 @@ export default function App() {
                       </div>
                       <Power size={14} className={isSystemActive ? "text-zinc-500" : "text-red-400"} />
                     </button>
+
+                    {healthInfo && healthInfo.lastPoll && (
+                      <div className="mt-2 p-2 rounded-lg bg-zinc-900/50 border border-zinc-800/50 flex flex-col gap-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[8px] text-zinc-500 uppercase tracking-widest">Server Polling</span>
+                          <span className={`text-[8px] font-bold ${
+                            healthInfo.lastPoll.status === 'Success' ? 'text-green-500' : 'text-red-500'
+                          }`}>
+                            {healthInfo.lastPoll.status}
+                          </span>
+                        </div>
+                        {healthInfo.lastPoll.error && (
+                          <span className="text-[7px] text-red-400/80 leading-tight">
+                            {healthInfo.lastPoll.error}
+                          </span>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <span className="text-[7px] text-zinc-600">Last Check</span>
+                          <span className="text-[7px] text-zinc-500">
+                            {new Date(healthInfo.lastPoll.time).toLocaleTimeString()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="p-3 rounded-xl bg-zinc-800/50 flex flex-col gap-2">

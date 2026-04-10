@@ -94,6 +94,9 @@ interface AlertLogEntry {
 let alertHistory: AlertLogEntry[] = [];
 let simulatedAlert: AlertLogEntry | null = null;
 let isSystemActive = true;
+let lastPollStatus = "Never polled";
+let lastPollTime = "";
+let lastPollError = "";
 
 function processCities(jsonData: any, lang: string | any): CityInfo[] {
   let cities: CityInfo[] = [];
@@ -144,7 +147,16 @@ async function startServer() {
 
   // Health check
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", active: isSystemActive, time: new Date().toISOString() });
+    res.json({ 
+      status: "ok", 
+      active: isSystemActive, 
+      time: new Date().toISOString(),
+      lastPoll: {
+        status: lastPollStatus,
+        time: lastPollTime,
+        error: lastPollError
+      }
+    });
   });
 
   app.post("/api/system/status", (req, res) => {
@@ -461,6 +473,7 @@ async function startServer() {
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     try {
+      lastPollTime = new Date().toISOString();
       const response = await fetch("https://www.oref.org.il/WarningMessages/alert/alerts.json", {
         signal: controller.signal,
         headers: {
@@ -482,6 +495,8 @@ async function startServer() {
       });
 
       if (response.ok) {
+        lastPollStatus = "Success";
+        lastPollError = "";
         const buffer = await response.arrayBuffer();
         const decoder = new TextDecoder("utf-8");
         let data = decoder.decode(buffer);
@@ -501,9 +516,17 @@ async function startServer() {
             }
           }
         }
+      } else {
+        lastPollStatus = `Error ${response.status}`;
+        lastPollError = response.statusText;
+        if (response.status === 403) {
+          console.error("Background Polling: 403 Forbidden. Server might be blocked.");
+        }
       }
-    } catch (error) {
-      // Silent error for background polling to avoid log spam
+    } catch (error: any) {
+      lastPollStatus = "Failed";
+      lastPollError = error.message || String(error);
+      console.error("Background Polling Error:", error.message);
     } finally {
       clearTimeout(timeoutId);
     }
