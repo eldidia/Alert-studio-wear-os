@@ -338,7 +338,7 @@ async function startServer() {
         headers["Cookie"] = orefCookie;
       }
 
-      const response = await nodeFetch("https://www.oref.org.il/WarningMessages/alert/alerts.json", {
+      const response = await nodeFetch(`https://www.oref.org.il/WarningMessages/Alert/alerts.json?v=${Date.now()}`, {
         signal: controller.signal,
         headers
       });
@@ -422,7 +422,7 @@ async function startServer() {
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     try {
-      const url = `https://www.oref.org.il/Shared/Ajax/GetCityByLocation.aspx?lat=${lat}&lng=${lng}&lang=he`;
+      const url = `https://www.oref.org.il/Shared/Ajax/GetCityByLocation.aspx?lat=${lat}&lng=${lng}&lang=he&v=${Date.now()}`;
       const headers: any = {
         "Host": "www.oref.org.il",
         "Referer": "https://www.oref.org.il/",
@@ -472,7 +472,7 @@ async function startServer() {
 
     try {
       // Pikud HaOref official cities list endpoint
-      const url = `https://www.oref.org.il/Shared/Ajax/GetCities.aspx?lang=${lang}`;
+      const url = `https://www.oref.org.il/Shared/Ajax/GetCities.aspx?lang=${lang}&v=${Date.now()}`;
       const headers: any = {
         "Host": "www.oref.org.il",
         "Referer": `https://www.oref.org.il/${lang}/Alerts/AlertsHistory`,
@@ -649,7 +649,7 @@ async function startServer() {
         headers["Cookie"] = orefCookie;
       }
 
-      const response = await nodeFetch("https://www.oref.org.il/WarningMessages/alert/alerts.json", {
+      const response = await nodeFetch(`https://www.oref.org.il/WarningMessages/Alert/alerts.json?v=${Date.now()}`, {
         signal: controller.signal,
         headers
       });
@@ -699,7 +699,7 @@ async function startServer() {
           console.error("Background Polling: 403 Forbidden. Trying history fallback...");
           
           try {
-            const historyRes = await nodeFetch("https://www.oref.org.il/WarningMessages/History/AlertsHistory.json", {
+            const historyRes = await nodeFetch(`https://www.oref.org.il/WarningMessages/History/AlertsHistory.json?v=${Date.now()}`, {
               signal: controller.signal,
               headers
             });
