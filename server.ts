@@ -93,6 +93,7 @@ interface AlertLogEntry {
 
 let alertHistory: AlertLogEntry[] = [];
 let simulatedAlert: AlertLogEntry | null = null;
+let isSystemActive = true;
 
 function processCities(jsonData: any, lang: string | any): CityInfo[] {
   let cities: CityInfo[] = [];
@@ -136,11 +137,43 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
   console.log("Starting server...");
 
   // Health check
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", time: new Date().toISOString(), nodeVersion: process.version });
+    res.json({ status: "ok", active: isSystemActive, time: new Date().toISOString() });
+  });
+
+  app.post("/api/system/status", (req, res) => {
+    const { active } = req.body;
+    if (typeof active === 'boolean') {
+      isSystemActive = active;
+      res.json({ status: "updated", active: isSystemActive });
+    } else {
+      res.status(400).json({ error: "Invalid status" });
+    }
+  });
+
+  app.post("/api/notifications", (req, res) => {
+    const { title, data, desc, warning } = req.body;
+    if (!title || !data) {
+      return res.status(400).json({ error: "Missing title or data" });
+    }
+
+    const newAlert: AlertLogEntry = {
+      id: "ext-" + Date.now(),
+      title,
+      data: Array.isArray(data) ? data : [data],
+      timestamp: new Date().toISOString()
+    };
+
+    alertHistory.unshift(newAlert);
+    if (alertHistory.length > 100) alertHistory.pop();
+
+    res.json({ status: "logged", id: newAlert.id });
   });
 
   // API Proxy for Home Front Command (Pikud HaOref)
@@ -201,7 +234,7 @@ async function startServer() {
               ...jsonData,
               timestamp: new Date().toISOString()
             });
-            if (alertHistory.length > 50) alertHistory.pop();
+            if (alertHistory.length > 100) alertHistory.pop();
           }
         }
 
@@ -382,7 +415,7 @@ async function startServer() {
   });
 
   // Simulation API
-  app.post("/api/simulate", express.json(), (req, res) => {
+  app.post("/api/simulate", (req, res) => {
     const { title, data } = req.body;
     simulatedAlert = {
       id: "sim-" + Date.now(),
@@ -419,6 +452,66 @@ async function startServer() {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
+
+  // Background polling for alerts
+  const pollOref = async () => {
+    if (!isSystemActive) return;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+    try {
+      const response = await fetch("https://www.oref.org.il/WarningMessages/alert/alerts.json", {
+        signal: controller.signal,
+        headers: {
+          "Host": "www.oref.org.il",
+          "Referer": "https://www.oref.org.il/",
+          "X-Requested-With": "XMLHttpRequest",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+          "Accept": "*/*",
+          "Accept-Language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
+          "Connection": "keep-alive",
+          "Cache-Control": "no-cache",
+          "Sec-Ch-Ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
+          "Sec-Ch-Ua-Mobile": "?0",
+          "Sec-Ch-Ua-Platform": '"Windows"',
+          "Sec-Fetch-Dest": "empty",
+          "Sec-Fetch-Mode": "cors",
+          "Sec-Fetch-Site": "same-origin",
+        },
+      });
+
+      if (response.ok) {
+        const buffer = await response.arrayBuffer();
+        const decoder = new TextDecoder("utf-8");
+        let data = decoder.decode(buffer);
+        if (data.charCodeAt(0) === 0xFEFF) data = data.substring(1);
+
+        if (data && data.trim() !== "") {
+          const jsonData = JSON.parse(data);
+          if (jsonData.id && jsonData.id !== "0") {
+            const alreadyLogged = alertHistory.find(a => a.id === jsonData.id);
+            if (!alreadyLogged) {
+              console.log(`New alert detected: ${jsonData.title} - ${jsonData.data.join(", ")}`);
+              alertHistory.unshift({
+                ...jsonData,
+                timestamp: new Date().toISOString()
+              });
+              if (alertHistory.length > 100) alertHistory.pop();
+            }
+          }
+        }
+      }
+    } catch (error) {
+      // Silent error for background polling to avoid log spam
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
+
+  // Start background polling every 2 seconds
+  console.log("Background alert polling started (2s interval)");
+  setInterval(pollOref, 2000);
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);

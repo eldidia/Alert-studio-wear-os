@@ -58,8 +58,24 @@ public class AlertService extends Service {
             @Override
             public void run() {
                 if (isRunning) {
-                    checkAlerts();
-                    handler.postDelayed(this, 3000); // Poll every 3 seconds
+                    JSONObject config = ConfigManager.getConfig(AlertService.this);
+                    
+                    // Shutdown principle: If system is not active, stop polling and stop service
+                    if (!config.optBoolean("isSystemActive", true)) {
+                        isRunning = false;
+                        stopForeground(true);
+                        stopSelf();
+                        return;
+                    }
+
+                    // Monitoring check
+                    if (config.optBoolean("isMonitoring", true)) {
+                        checkAlerts();
+                    }
+
+                    // Power saving mode: Increase interval if enabled
+                    long interval = config.optBoolean("isPowerSaving", false) ? 30000 : 3000;
+                    handler.postDelayed(this, interval);
                 }
             }
         }, 3000);

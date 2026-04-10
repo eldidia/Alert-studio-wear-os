@@ -51,6 +51,24 @@
             android:text="Monitoring"
             android:textColor="@android:color/white"
             android:textSize="12sp"
+            android:layout_marginBottom="8dp"/>
+
+        <Switch
+            android:id="@+id/powerSavingSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Power Saving Mode"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:layout_marginBottom="8dp"/>
+
+        <Switch
+            android:id="@+id/systemActiveSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="System Active"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
             android:layout_marginBottom="16dp"/>
 
         <Switch

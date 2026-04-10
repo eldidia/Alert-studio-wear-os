@@ -21,6 +21,8 @@ import java.util.stream.Collectors;
 
 public class SettingsActivity extends Activity {
     private Switch monitoringSwitch;
+    private Switch powerSavingSwitch;
+    private Switch systemActiveSwitch;
     private Switch typeFilterSwitch;
     private Switch cityFilterSwitch;
     private EditText citySearchInput;
@@ -65,6 +67,8 @@ public class SettingsActivity extends Activity {
         setContentView(R.layout.activity_settings);
 
         monitoringSwitch = findViewById(R.id.monitoringSwitch);
+        powerSavingSwitch = findViewById(R.id.powerSavingSwitch);
+        systemActiveSwitch = findViewById(R.id.systemActiveSwitch);
         typeFilterSwitch = findViewById(R.id.typeFilterSwitch);
         cityFilterSwitch = findViewById(R.id.cityFilterSwitch);
         citySearchInput = findViewById(R.id.citySearchInput);
@@ -82,6 +86,8 @@ public class SettingsActivity extends Activity {
 
         JSONObject config = ConfigManager.getConfig(this);
         monitoringSwitch.setChecked(config.optBoolean("isMonitoring", true));
+        powerSavingSwitch.setChecked(config.optBoolean("isPowerSaving", false));
+        systemActiveSwitch.setChecked(config.optBoolean("isSystemActive", true));
         typeFilterSwitch.setChecked(config.optBoolean("filterByTypes", false));
         cityFilterSwitch.setChecked(config.optBoolean("filterToCity", false));
         
@@ -98,6 +104,21 @@ public class SettingsActivity extends Activity {
 
         monitoringSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             updateConfig("isMonitoring", isChecked);
+        });
+
+        powerSavingSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateConfig("isPowerSaving", isChecked);
+        });
+
+        systemActiveSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateConfig("isSystemActive", isChecked);
+            if (!isChecked) {
+                // If shutting down, stop the service immediately
+                stopService(new Intent(this, AlertService.class));
+            } else {
+                // If activating, start the service
+                startService(new Intent(this, AlertService.class));
+            }
         });
 
         typeFilterSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {

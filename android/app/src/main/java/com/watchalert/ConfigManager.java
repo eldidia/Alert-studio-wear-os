@@ -47,6 +47,8 @@ public class ConfigManager {
         try {
             JSONObject config = new JSONObject();
             config.put("isMonitoring", true);
+            config.put("isPowerSaving", false);
+            config.put("isSystemActive", true);
             config.put("lang", "he");
             config.put("profiles", new JSONArray());
             return config;

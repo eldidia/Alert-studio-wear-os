@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Bell, BellOff, ShieldAlert, Settings, MapPin, Clock, Info, AlertTriangle, Globe, ChevronDown, ChevronUp, Search, Activity, X } from 'lucide-react';
+import { Bell, BellOff, ShieldAlert, Settings, MapPin, Clock, Info, AlertTriangle, Globe, ChevronDown, ChevronUp, Search, Activity, X, Battery, Power } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Alert {
@@ -52,6 +52,9 @@ const translations = {
     simulateAlert: 'שלח התרעה מדמה',
     noHistory: 'אין היסטוריית התרעות',
     simulated: 'מדמה',
+    powerSaving: 'מצב חיסכון בסוללה',
+    systemActive: 'מערכת פעילה',
+    shutdown: 'כיבוי מערכת',
   },
   en: {
     monitoring: 'Monitoring Active',
@@ -92,6 +95,9 @@ const translations = {
     simulateAlert: 'Send Simulated Alert',
     noHistory: 'No Alert History',
     simulated: 'Simulated',
+    powerSaving: 'Power Saving Mode',
+    systemActive: 'System Active',
+    shutdown: 'System Shutdown',
   },
   ar: {
     monitoring: 'المراقبة نشطة',
@@ -132,6 +138,9 @@ const translations = {
     simulateAlert: 'إرسال تنبيه محاكى',
     noHistory: 'لا يوجد سجل تنبيهات',
     simulated: 'محاكى',
+    powerSaving: 'وضع توفير الطاقة',
+    systemActive: 'النظام نشط',
+    shutdown: 'إيقاف تشغيل النظام',
   },
   ru: {
     monitoring: 'Мониторинг активен',
@@ -172,6 +181,9 @@ const translations = {
     simulateAlert: 'Отправить симуляцию',
     noHistory: 'История пуста',
     simulated: 'Симуляция',
+    powerSaving: 'Энергосбережение',
+    systemActive: 'Система активна',
+    shutdown: 'Выключение системы',
   }
 };
 
@@ -211,6 +223,8 @@ export default function App() {
   const [alerts, setAlerts] = useState<Alert | null>(null);
   const [lastAlertId, setLastAlertId] = useState<string>("0");
   const [isMonitoring, setIsMonitoring] = useState(true);
+  const [isPowerSaving, setIsPowerSaving] = useState(false);
+  const [isSystemActive, setIsSystemActive] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -247,6 +261,8 @@ export default function App() {
     if ((window as any).AndroidApp && (window as any).AndroidApp.updateConfig) {
       const config = {
         isMonitoring,
+        isPowerSaving,
+        isSystemActive,
         profiles,
         userCity,
         filterToCity,
@@ -256,11 +272,27 @@ export default function App() {
       };
       (window as any).AndroidApp.updateConfig(JSON.stringify(config));
     }
-  }, [userCity, filterToCity, isMonitoring, profiles, lang, selectedTypes, filterByTypes]);
+  }, [userCity, filterToCity, isMonitoring, isPowerSaving, isSystemActive, profiles, lang, selectedTypes, filterByTypes]);
 
   // Get user location and cities list
   useEffect(() => {
     const init = async () => {
+      // Fetch system status
+      try {
+        const healthRes = await fetch('/api/health');
+        if (healthRes.ok) {
+          const healthData = await healthRes.json();
+          if (typeof healthData.active === 'boolean') {
+            setIsSystemActive(healthData.active);
+          }
+        }
+      } catch (e) {
+        // Silent fail for health check on init as it might be transient
+        if (e instanceof Error && e.message !== "Failed to fetch") {
+          console.error("Health fetch error:", e);
+        }
+      }
+
       // Fetch cities list for current language
       setIsLoadingCities(true);
       try {
@@ -391,7 +423,7 @@ export default function App() {
   };
 
   const fetchAlerts = useCallback(async (retryCount = 0) => {
-    if (!isMonitoring) return;
+    if (!isMonitoring || !isSystemActive) return;
     try {
       const response = await fetch('/api/alerts');
       
@@ -451,26 +483,37 @@ export default function App() {
 
   // Polling mechanism
   useEffect(() => {
-    const interval = setInterval(fetchAlerts, 3000);
+    if (!isSystemActive) return;
+    const pollInterval = isPowerSaving ? 30000 : 3000;
+    const interval = setInterval(fetchAlerts, pollInterval);
     return () => clearInterval(interval);
-  }, [fetchAlerts]);
+  }, [fetchAlerts, isPowerSaving, isSystemActive]);
 
   // Fetch history
   useEffect(() => {
+    let isMounted = true;
     const fetchHistory = async () => {
       try {
         const res = await fetch('/api/history');
         if (res.ok) {
           const data = await res.json();
-          setHistory(data);
+          if (isMounted) setHistory(data);
+        } else {
+          console.warn(`History fetch failed with status: ${res.status}`);
         }
       } catch (e) {
-        console.error("History fetch error:", e);
+        // Only log error if it's not a common "Failed to fetch" during server restart
+        if (e instanceof Error && e.message !== "Failed to fetch") {
+          console.error("History fetch error:", e);
+        }
       }
     };
     fetchHistory();
     const interval = setInterval(fetchHistory, 5000);
-    return () => clearInterval(interval);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const triggerSimulation = async () => {
@@ -553,7 +596,12 @@ export default function App() {
                     {formatTime(currentTime)}
                   </span>
                   <div className="flex items-center gap-2">
-                    {isMonitoring ? (
+                    {!isSystemActive ? (
+                      <span className="flex items-center gap-1 text-[10px] text-red-500 font-bold uppercase tracking-widest">
+                        <Power size={10} />
+                        {t.shutdown}
+                      </span>
+                    ) : isMonitoring ? (
                       <span className="flex items-center gap-1 text-[10px] text-green-500 font-bold uppercase tracking-widest">
                         <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                         {t.monitoring}
@@ -640,6 +688,7 @@ export default function App() {
                             {entry.title}
                           </span>
                           <span className="text-[8px] text-zinc-500">
+                            {entry.id.startsWith('ext-') ? 'Received ' : ''}
                             {new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                           </span>
                         </div>
@@ -929,6 +978,50 @@ export default function App() {
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => setIsPowerSaving(!isPowerSaving)}
+                      className={`flex items-center justify-between p-3 rounded-xl transition-all ${
+                        isPowerSaving ? 'bg-amber-600/20 text-amber-400 border border-amber-500/20' : 'bg-zinc-800/50 text-zinc-400'
+                      }`}
+                    >
+                      <div className="flex flex-col items-start">
+                        <span className="text-xs font-medium">{t.powerSaving}</span>
+                        <span className="text-[9px] opacity-60">
+                          {isPowerSaving ? '30s Polling' : '3s Polling'}
+                        </span>
+                      </div>
+                      <Battery size={14} className={isPowerSaving ? "text-amber-400" : "text-zinc-500"} />
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        const next = !isSystemActive;
+                        setIsSystemActive(next);
+                        try {
+                          await fetch('/api/system/status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ active: next })
+                          });
+                        } catch (e) {
+                          console.error("Failed to sync system status", e);
+                        }
+                      }}
+                      className={`flex items-center justify-between p-3 rounded-xl transition-all ${
+                        isSystemActive ? 'bg-zinc-800/50 text-zinc-400' : 'bg-red-600/20 text-red-400 border border-red-500/20'
+                      }`}
+                    >
+                      <div className="flex flex-col items-start">
+                        <span className="text-xs font-medium">{t.systemActive}</span>
+                        <span className="text-[9px] opacity-60">
+                          {isSystemActive ? 'Running' : 'Stopped'}
+                        </span>
+                      </div>
+                      <Power size={14} className={isSystemActive ? "text-zinc-500" : "text-red-400"} />
+                    </button>
                   </div>
 
                   <div className="p-3 rounded-xl bg-zinc-800/50 flex flex-col gap-2">
