@@ -30,6 +30,139 @@ const FALLBACK_CITIES_HE: CityInfo[] = [
   { name: "באר שבע", district: "מרכז הנגב", time: "60", lat: 31.2518, lng: 34.7913 },
   { name: "אשקלון", district: "לכיש", time: "30", lat: 31.6688, lng: 34.5743 },
   { name: "אילת", district: "אילת", time: "30", lat: 29.5577, lng: 34.9519 },
+  { name: "בני ברק", district: "דן", time: "90", lat: 32.0833, lng: 34.8333 },
+  { name: "חולון", district: "דן", time: "90", lat: 32.0167, lng: 34.7667 },
+  { name: "רמת גן", district: "דן", time: "90", lat: 32.0667, lng: 34.8167 },
+  { name: "רחובות", district: "שפלה", time: "90", lat: 31.8947, lng: 34.8092 },
+  { name: "בת ים", district: "דן", time: "90", lat: 32.0167, lng: 34.75 },
+  { name: "בית שמש", district: "ירושלים", time: "90", lat: 31.7472, lng: 34.9881 },
+  { name: "כפר סבא", district: "שרון", time: "90", lat: 32.175, lng: 34.9069 },
+  { name: "הרצליה", district: "שרון", time: "90", lat: 32.1653, lng: 34.8458 },
+  { name: "חדרה", district: "שרון", time: "90", lat: 32.435, lng: 34.9139 },
+  { name: "מודיעין-מכבים-רעות", district: "שפלה", time: "90", lat: 31.8958, lng: 35.0103 },
+  { name: "לוד", district: "שפלה", time: "90", lat: 31.9511, lng: 34.8936 },
+  { name: "רמלה", district: "שפלה", time: "90", lat: 31.9275, lng: 34.8625 },
+  { name: "רעננה", district: "שרון", time: "90", lat: 32.1833, lng: 34.8667 },
+  { name: "מודיעין עילית", district: "שפלה", time: "90", lat: 31.9333, lng: 35.0333 },
+  { name: "רהט", district: "מרכז הנגב", time: "60", lat: 31.3917, lng: 34.7542 },
+  { name: "הוד השרון", district: "שרון", time: "90", lat: 32.15, lng: 34.8833 },
+  { name: "גבעתיים", district: "דן", time: "90", lat: 32.0722, lng: 34.8125 },
+  { name: "קריית אתא", district: "חיפה", time: "60", lat: 32.8, lng: 35.1 },
+  { name: "נהריה", district: "קו העימות", time: "0", lat: 33.0033, lng: 35.0914 },
+  { name: "ביתר עילית", district: "ירושלים", time: "90", lat: 31.7042, lng: 35.1167 },
+  { name: "אום אל-פחם", district: "ואדי ערה", time: "90", lat: 32.5167, lng: 35.15 },
+  { name: "קריית גת", district: "לכיש", time: "60", lat: 31.6083, lng: 34.7639 },
+  { name: "ראש העין", district: "שרון", time: "90", lat: 32.0956, lng: 34.9567 },
+  { name: "נס ציונה", district: "שפלה", time: "90", lat: 31.9289, lng: 34.7983 },
+  { name: "עכו", district: "גליל עליון", time: "30", lat: 32.9278, lng: 35.0817 },
+  { name: "אלעד", district: "שרון", time: "90", lat: 32.05, lng: 34.95 },
+  { name: "רמת השרון", district: "שרון", time: "90", lat: 32.1389, lng: 34.8389 },
+  { name: "כרמיאל", district: "גליל עליון", time: "30", lat: 32.9136, lng: 35.2961 },
+  { name: "יבנה", district: "שפלה", time: "60", lat: 31.8778, lng: 34.7394 },
+  { name: "טבריה", district: "גליל תחתון", time: "60", lat: 32.7944, lng: 35.5333 },
+  { name: "טייבה", district: "שרון", time: "90", lat: 32.2667, lng: 35.0167 },
+  { name: "קריית מוצקין", district: "חיפה", time: "60", lat: 32.8333, lng: 35.0667 },
+  { name: "קריית ים", district: "חיפה", time: "60", lat: 32.8667, lng: 35.0667 },
+  { name: "קריית ביאליק", district: "חיפה", time: "60", lat: 32.8333, lng: 35.0833 },
+  { name: "קריית שמונה", district: "קו העימות", time: "0", lat: 33.2075, lng: 35.57 },
+  { name: "מעלה אדומים", district: "ירושלים", time: "90", lat: 31.7775, lng: 35.3008 },
+  { name: "אור יהודה", district: "דן", time: "90", lat: 32.0333, lng: 34.85 },
+  { name: "צפת", district: "גליל עליון", time: "30", lat: 32.9658, lng: 35.4983 },
+  { name: "נתיבות", district: "עוטף עזה", time: "30", lat: 31.4167, lng: 34.5833 },
+  { name: "דימונה", district: "דרום הנגב", time: "60", lat: 31.0667, lng: 35.0333 },
+  { name: "שדרות", district: "עוטף עזה", time: "15", lat: 31.525, lng: 34.5967 },
+  { name: "אופקים", district: "עוטף עזה", time: "45", lat: 31.3167, lng: 34.6167 },
+  { name: "שלומי", district: "קו העימות", time: "0", lat: 33.075, lng: 35.1417 },
+  { name: "מעלות תרשיחא", district: "קו העימות", time: "0", lat: 33.0167, lng: 35.2667 },
+  { name: "קריית מלאכי", district: "לכיש", time: "60", lat: 31.7333, lng: 34.75 },
+  { name: "מגדל העמק", district: "עמקים", time: "60", lat: 32.675, lng: 35.2417 },
+  { name: "נשר", district: "חיפה", time: "60", lat: 32.7667, lng: 35.0333 },
+  { name: "טירת כרמל", district: "חיפה", time: "60", lat: 32.7667, lng: 34.9667 },
+  { name: "ערד", district: "דרום הנגב", time: "60", lat: 31.2589, lng: 35.2131 },
+  { name: "קריית ארבע", district: "יהודה", time: "90", lat: 31.5286, lng: 35.1111 },
+  { name: "אריאל", district: "שומרון", time: "90", lat: 32.105, lng: 35.1742 },
+  { name: "מעלה אפרים", district: "בקעת הירדן", time: "90", lat: 32.025, lng: 35.425 },
+  { name: "קצרין", district: "גולן", time: "0", lat: 32.9917, lng: 35.6917 },
+  { name: "מצפה רמון", district: "דרום הנגב", time: "60", lat: 30.6083, lng: 34.8028 },
+  { name: "ירוחם", district: "מרכז הנגב", time: "60", lat: 31.0833, lng: 34.9167 },
+  { name: "נתיב העשרה", district: "עוטף עזה", time: "0", lat: 31.575, lng: 34.4917 },
+  { name: "זיקים", district: "עוטף עזה", time: "0", lat: 31.6083, lng: 34.5083 },
+  { name: "כרמיה", district: "עוטף עזה", time: "0", lat: 31.6167, lng: 34.5167 },
+  { name: "יד מרדכי", district: "עוטף עזה", time: "0", lat: 31.5833, lng: 34.5583 },
+  { name: "ארז", district: "עוטף עזה", time: "0", lat: 31.5583, lng: 34.5667 },
+  { name: "ניר עם", district: "עוטף עזה", time: "0", lat: 31.5167, lng: 34.5833 },
+  { name: "מפלסים", district: "עוטף עזה", time: "0", lat: 31.4917, lng: 34.5667 },
+  { name: "כפר עזה", district: "עוטף עזה", time: "0", lat: 31.45, lng: 34.5333 },
+  { name: "נחל עוז", district: "עוטף עזה", time: "0", lat: 31.4667, lng: 34.5 },
+  { name: "עלומים", district: "עוטף עזה", time: "0", lat: 31.45, lng: 34.5167 },
+  { name: "בארי", district: "עוטף עזה", time: "0", lat: 31.4167, lng: 34.4917 },
+  { name: "רעים", district: "עוטף עזה", time: "0", lat: 31.3833, lng: 34.4583 },
+  { name: "כיסופים", district: "עוטף עזה", time: "0", lat: 31.3667, lng: 34.4 },
+  { name: "עין השלושה", district: "עוטף עזה", time: "0", lat: 31.35, lng: 34.3917 },
+  { name: "נירים", district: "עוטף עזה", time: "0", lat: 31.3333, lng: 34.4 },
+  { name: "ניר עוז", district: "עוטף עזה", time: "0", lat: 31.3167, lng: 34.3917 },
+  { name: "מגן", district: "עוטף עזה", time: "0", lat: 31.3, lng: 34.4333 },
+  { name: "עין הבשור", district: "עוטף עזה", time: "0", lat: 31.2833, lng: 34.4667 },
+  { name: "ניר יצחק", district: "עוטף עזה", time: "0", lat: 31.2333, lng: 34.3583 },
+  { name: "סופה", district: "עוטף עזה", time: "0", lat: 31.2333, lng: 34.3333 },
+  { name: "חולית", district: "עוטף עזה", time: "0", lat: 31.2167, lng: 34.3167 },
+  { name: "כרם שלום", district: "עוטף עזה", time: "0", lat: 31.2167, lng: 34.2833 },
+  { name: "פרי גן", district: "עוטף עזה", time: "0", lat: 31.2167, lng: 34.35 },
+  { name: "תלמי יוסף", district: "עוטף עזה", time: "0", lat: 31.2167, lng: 34.3667 },
+  { name: "יתד", district: "עוטף עזה", time: "0", lat: 31.2167, lng: 34.3833 },
+  { name: "דקל", district: "עוטף עזה", time: "0", lat: 31.2, lng: 34.3833 },
+  { name: "מבטחים", district: "עוטף עזה", time: "0", lat: 31.25, lng: 34.4167 },
+  { name: "עמיעוז", district: "עוטף עזה", time: "0", lat: 31.25, lng: 34.4333 },
+  { name: "ישע", district: "עוטף עזה", time: "0", lat: 31.25, lng: 34.45 },
+  { name: "בני נצרים", district: "עוטף עזה", time: "0", lat: 31.15, lng: 34.3167 },
+  { name: "נווה", district: "עוטף עזה", time: "0", lat: 31.1667, lng: 34.3333 },
+  { name: "שלומית", district: "עוטף עזה", time: "0", lat: 31.1833, lng: 34.35 },
+  { name: "אבשלום", district: "עוטף עזה", time: "0", lat: 31.2, lng: 34.3667 },
+  { name: "מרכז צוחר", district: "עוטף עזה", time: "0", lat: 31.2333, lng: 34.4167 },
+  { name: "אוהד", district: "עוטף עזה", time: "0", lat: 31.2333, lng: 34.4333 },
+  { name: "שדה ניצן", district: "עוטף עזה", time: "0", lat: 31.25, lng: 34.4667 },
+  { name: "תלמי אליהו", district: "עוטף עזה", time: "0", lat: 31.2333, lng: 34.4667 },
+  { name: "גבולות", district: "עוטף עזה", time: "0", lat: 31.2, lng: 34.4667 },
+  { name: "צאלים", district: "עוטף עזה", time: "0", lat: 31.2, lng: 34.5333 },
+  { name: "אורים", district: "עוטף עזה", time: "0", lat: 31.3, lng: 34.5167 },
+  { name: "רביבים", district: "מרכז הנגב", time: "60", lat: 31.05, lng: 34.7167 },
+  { name: "משאבי שדה", district: "מרכז הנגב", time: "60", lat: 31.0, lng: 34.7833 },
+  { name: "טללים", district: "מרכז הנגב", time: "60", lat: 30.95, lng: 34.7833 },
+  { name: "שדה בוקר", district: "מרכז הנגב", time: "60", lat: 30.85, lng: 34.7833 },
+  { name: "מדרשת בן גוריון", district: "מרכז הנגב", time: "60", lat: 30.85, lng: 34.7833 },
+  { name: "עבדת", district: "מרכז הנגב", time: "60", lat: 30.8, lng: 34.7667 },
+  { name: "מצפה רמון", district: "דרום הנגב", time: "60", lat: 30.6083, lng: 34.8028 },
+  { name: "נאות סמדר", district: "דרום הנגב", time: "60", lat: 30.05, lng: 35.0333 },
+  { name: "שיזפון", district: "דרום הנגב", time: "60", lat: 30.05, lng: 35.0333 },
+  { name: "נווה חריף", district: "דרום הנגב", time: "60", lat: 30.0333, lng: 35.05 },
+  { name: "קטורה", district: "דרום הנגב", time: "60", lat: 29.9667, lng: 35.0667 },
+  { name: "גרופית", district: "דרום הנגב", time: "60", lat: 29.9333, lng: 35.0667 },
+  { name: "יהל", district: "דרום הנגב", time: "60", lat: 30.0833, lng: 35.1333 },
+  { name: "לוטן", district: "דרום הנגב", time: "60", lat: 29.9833, lng: 35.0833 },
+  { name: "אליפז", district: "דרום הנגב", time: "60", lat: 29.8, lng: 34.9833 },
+  { name: "באר אורה", district: "אילת", time: "30", lat: 29.7167, lng: 35.0167 },
+  { name: "אילת", district: "אילת", time: "30", lat: 29.5577, lng: 34.9519 },
+  { name: "עוטף עזה", district: "עוטף עזה", time: "0", lat: 31.4, lng: 34.5 },
+  { name: "גליל עליון", district: "גליל עליון", time: "30", lat: 33.0, lng: 35.5 },
+  { name: "גליל תחתון", district: "גליל תחתון", time: "60", lat: 32.8, lng: 35.4 },
+  { name: "מרכז הנגב", district: "מרכז הנגב", time: "60", lat: 31.1, lng: 34.8 },
+  { name: "דרום הנגב", district: "דרום הנגב", time: "60", lat: 30.5, lng: 35.0 },
+  { name: "ערבה", district: "ערבה", time: "60", lat: 30.7, lng: 35.2 },
+  { name: "בקעת הירדן", district: "בקעת הירדן", time: "90", lat: 32.1, lng: 35.5 },
+  { name: "יהודה", district: "יהודה", time: "90", lat: 31.6, lng: 35.1 },
+  { name: "שומרון", district: "שומרון", time: "90", lat: 32.2, lng: 35.2 },
+  { name: "דן", district: "דן", time: "90", lat: 32.05, lng: 34.8 },
+  { name: "עמק הירדן", district: "גליל תחתון", time: "60", lat: 32.7, lng: 35.6 },
+  { name: "עמק המעיינות", district: "עמקים", time: "60", lat: 32.5, lng: 35.5 },
+  { name: "עמק יזרעאל", district: "עמקים", time: "60", lat: 32.6, lng: 35.2 },
+  { name: "מנשה", district: "ואדי ערה", time: "90", lat: 32.5, lng: 35.0 },
+  { name: "חוף הכרמל", district: "חיפה", time: "60", lat: 32.7, lng: 34.9 },
+  { name: "זבולון", district: "חיפה", time: "60", lat: 32.8, lng: 35.1 },
+  { name: "מטה אשר", district: "קו העימות", time: "0", lat: 33.0, lng: 35.1 },
+  { name: "מעלה יוסף", district: "קו העימות", time: "0", lat: 33.0, lng: 35.3 },
+  { name: "מרום הגליל", district: "גליל עליון", time: "30", lat: 32.9, lng: 35.4 },
+  { name: "הגליל העליון", district: "גליל עליון", time: "30", lat: 33.1, lng: 35.6 },
+  { name: "מבואות החרמון", district: "קו העימות", time: "0", lat: 33.2, lng: 35.6 },
 ];
 
 const FALLBACK_CITIES_EN: CityInfo[] = FALLBACK_CITIES_HE.map(c => ({
@@ -40,8 +173,8 @@ const FALLBACK_CITIES_EN: CityInfo[] = FALLBACK_CITIES_HE.map(c => ({
 
 // In-memory cache for cities to avoid repeated 403s
 const citiesCache: Record<string, CityInfo[]> = {
-  he: FALLBACK_CITIES_HE,
-  en: FALLBACK_CITIES_EN
+  he: processCities(FALLBACK_CITIES_HE, 'he'),
+  en: processCities(FALLBACK_CITIES_EN, 'en')
 };
 
 // Alert History and Simulation
@@ -76,11 +209,12 @@ function processCities(jsonData: any, lang: string | any): CityInfo[] {
       if (typeof item === 'string') {
         name = item;
       } else {
-        name = item.v || item.n || item.value || item.label || "";
-        district = item.d || item.district || "";
-        time = item.t || item.time || "";
-        const lat = parseFloat(item.lat || item.latitude);
-        const lng = parseFloat(item.lng || item.longitude || item.altitude);
+        // Oref format: { v: "City", l: "Label", i: "ID" } or { n: "Name", d: "District", t: "Time" }
+        name = item.v || item.n || item.name || item.value || item.label || item.text || "";
+        district = item.d || item.district || item.area || "";
+        time = item.t || item.time || item.countdown || "";
+        const lat = parseFloat(item.lat || item.latitude || item.y);
+        const lng = parseFloat(item.lng || item.longitude || item.x || item.altitude);
         
         return {
           name: name.trim().normalize('NFC'),
@@ -98,10 +232,7 @@ function processCities(jsonData: any, lang: string | any): CityInfo[] {
       };
     }).filter(c => c.name);
     
-    // Sort by name
-    cities.sort((a, b) => a.name.localeCompare(b.name, lang === 'he' ? 'he' : 'en'));
-    
-    // De-duplicate
+    // De-duplicate by name and district (matching the frontend key)
     const seen = new Set();
     cities = cities.filter(c => {
       const key = `${c.name}-${c.district}`;
@@ -109,6 +240,9 @@ function processCities(jsonData: any, lang: string | any): CityInfo[] {
       seen.add(key);
       return true;
     });
+
+    // Sort by name
+    cities.sort((a, b) => a.name.localeCompare(b.name, lang === 'he' ? 'he' : 'en'));
   }
   return cities;
 }

@@ -20,13 +20,15 @@
 
 .watch-face {
   @apply relative rounded-full overflow-hidden border-4 border-zinc-800 shadow-2xl;
-  width: min(95vw, 95vh);
-  height: min(95vw, 95vh);
+  width: min(95vw, 95vh, 450px);
+  height: min(95vw, 95vh, 450px);
   background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
 }
 
 .watch-inner {
-  @apply absolute inset-0 flex flex-col items-center justify-center p-8 text-center;
+  @apply absolute inset-0 flex flex-col items-center justify-center p-6 text-center;
+  /* Ensure content stays within the circular safe area */
+  padding: 15%;
 }
 
 .alert-active {

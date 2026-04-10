@@ -52,6 +52,7 @@ const translations = {
     simulateAlert: 'שלח התרעה מדמה',
     noHistory: 'אין היסטוריית התרעות',
     clearHistory: 'נקה היסטוריה',
+    noResults: 'לא נמצאו תוצאות',
     simulated: 'מדמה',
     powerSaving: 'מצב חיסכון בסוללה',
     systemActive: 'מערכת פעילה',
@@ -97,6 +98,7 @@ const translations = {
     simulateAlert: 'Send Simulated Alert',
     noHistory: 'No Alert History',
     clearHistory: 'Clear History',
+    noResults: 'No results found',
     simulated: 'Simulated',
     powerSaving: 'Power Saving Mode',
     systemActive: 'System Active',
@@ -142,6 +144,7 @@ const translations = {
     simulateAlert: 'إرسال تنبيه محاكى',
     noHistory: 'لا يوجد سجل تنبيهات',
     clearHistory: 'مسح السجل',
+    noResults: 'لم يتم العثور على نتائج',
     simulated: 'محاكى',
     powerSaving: 'وضع توفير الطاقة',
     systemActive: 'النظام نشط',
@@ -187,6 +190,7 @@ const translations = {
     simulateAlert: 'Отправить симуляцию',
     noHistory: 'История пуста',
     clearHistory: 'Очистить историю',
+    noResults: 'Результатов не найдено',
     simulated: 'Симуляция',
     powerSaving: 'Энергосбережение',
     systemActive: 'Система активна',
@@ -354,24 +358,28 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Request notification permissions
-  const requestPermissions = async () => {
-    if ('Notification' in window) {
-      const permission = await Notification.requestPermission();
-      setNotificationsEnabled(permission === 'granted');
-      if (permission === 'granted') {
-        new Notification(t.monitoring, { body: t.version, icon: "/favicon.ico" });
-        triggerVibration();
-      }
-    }
-  };
-
   const triggerVibration = useCallback(() => {
     if (vibrationEnabled && 'vibrate' in navigator) {
       // SOS pattern: 3 short, 3 long, 3 short
       navigator.vibrate([200, 100, 200, 100, 200, 300, 400, 100, 400, 100, 400, 300, 200, 100, 200, 100, 200]);
     }
   }, [vibrationEnabled]);
+
+  // Request notification permissions
+  const requestPermissions = useCallback(async () => {
+    if ('Notification' in window) {
+      const permission = await Notification.requestPermission();
+      setNotificationsEnabled(permission === 'granted');
+      if (permission === 'granted') {
+        try {
+          new Notification(t.monitoring, { body: t.version, icon: "/favicon.ico" });
+          triggerVibration();
+        } catch (e) {
+          console.error("Initial notification failed", e);
+        }
+      }
+    }
+  }, [t.monitoring, t.version, triggerVibration]);
 
   const normalizeCity = (name: string) => {
     if (!name) return "";
@@ -672,22 +680,22 @@ export default function App() {
               >
                 {/* Top: Time and Status */}
                 <div className="flex flex-col items-center gap-1">
-                  <span className="text-3xl font-mono font-bold tracking-tighter">
+                  <span className="text-4xl font-mono font-bold tracking-tighter">
                     {formatTime(currentTime)}
                   </span>
                   <div className="flex items-center gap-2">
                     {!isSystemActive ? (
-                      <span className="flex items-center gap-1 text-[10px] text-red-500 font-bold uppercase tracking-widest">
-                        <Power size={10} />
+                      <span className="flex items-center gap-1 text-[12px] text-red-500 font-bold uppercase tracking-widest">
+                        <Power size={12} />
                         {t.shutdown}
                       </span>
                     ) : isMonitoring ? (
-                      <span className="flex items-center gap-1 text-[10px] text-green-500 font-bold uppercase tracking-widest">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                      <span className="flex items-center gap-1 text-[12px] text-green-500 font-bold uppercase tracking-widest">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                         {t.monitoring}
                       </span>
                     ) : (
-                      <span className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+                      <span className="text-[12px] text-zinc-500 font-bold uppercase tracking-widest">
                         {t.paused}
                       </span>
                     )}
@@ -737,26 +745,18 @@ export default function App() {
                 </div>
 
                 {/* Bottom: Controls */}
-                <div className="flex items-center justify-center gap-6 pb-2">
+                <div className="flex items-center justify-center gap-8 pb-4">
                   <button
                     onClick={() => setShowLog(true)}
-                    className="p-3 rounded-full bg-zinc-800 text-white"
+                    className="p-4 rounded-full bg-zinc-800 text-white shadow-lg active:scale-90 transition-transform"
                   >
-                    <Clock size={18} />
-                  </button>
-                  <button
-                    onClick={toggleMonitoring}
-                    className={`p-3 rounded-full transition-colors ${
-                      isMonitoring ? 'bg-zinc-800 text-white' : 'bg-green-600 text-white'
-                    }`}
-                  >
-                    {isMonitoring ? <BellOff size={18} /> : <Bell size={18} />}
+                    <Clock size={20} />
                   </button>
                   <button
                     onClick={() => setShowSettings(true)}
-                    className="p-3 rounded-full bg-zinc-800 text-white"
+                    className="p-4 rounded-full bg-zinc-800 text-white shadow-lg active:scale-90 transition-transform"
                   >
-                    <Settings size={18} />
+                    <Settings size={20} />
                   </button>
                 </div>
               </motion.div>
@@ -1010,7 +1010,7 @@ export default function App() {
 
                         {!isLoadingCities && filteredCities.length === 0 && (
                           <div className="text-[10px] text-zinc-600 p-4 text-center italic">
-                            {t.noAlerts}
+                            {t.noResults}
                           </div>
                         )}
 
@@ -1241,9 +1241,24 @@ export default function App() {
       </div>
 
       {/* Background Info */}
-      <div className="absolute bottom-8 text-center opacity-30 pointer-events-none">
-        <p className="text-[10px] uppercase tracking-[0.3em] font-bold">Pikud HaOref Companion</p>
+      <div className="absolute bottom-4 text-center opacity-20 pointer-events-none">
+        <p className="text-[10px] uppercase tracking-[0.3em] font-bold">WatchAlert for Galaxy Watch</p>
       </div>
+
+      {!notificationsEnabled && !showSettings && !alerts && (
+        <motion.div 
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50"
+        >
+          <button 
+            onClick={requestPermissions}
+            className="bg-blue-600 text-white text-[10px] font-bold px-4 py-2 rounded-full shadow-xl animate-bounce"
+          >
+            🔔 ENABLE ALERTS
+          </button>
+        </motion.div>
+      )}
 
       {error && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-900/80 text-white text-[10px] px-3 py-1 rounded-full backdrop-blur-sm">
