@@ -194,6 +194,8 @@ interface CityInfo {
   name: string;
   district: string;
   time: string;
+  lat?: number;
+  lng?: number;
 }
 
 const FALLBACK_CITIES: CityInfo[] = [
@@ -246,6 +248,7 @@ export default function App() {
     return 'he';
   });
   const [cities, setCities] = useState<CityInfo[]>(FALLBACK_CITIES);
+  const [alertCoords, setAlertCoords] = useState<{lat: number, lng: number}[]>([]);
   const [isLoadingCities, setIsLoadingCities] = useState(false);
   const [showCitySelector, setShowCitySelector] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -457,13 +460,29 @@ export default function App() {
             setLastAlertId(data.id);
             triggerVibration();
             
-            if (notificationsEnabled) {
-              new Notification(t.alertActive, {
-                body: relevantAlerts.join(", "),
-                icon: "/favicon.ico",
-                tag: "oref-alert",
-                requireInteraction: true
-              });
+            // Find coordinates for the relevant alerts
+            const coords: {lat: number, lng: number}[] = [];
+            relevantAlerts.forEach(cityName => {
+              const city = cities.find(c => isCityMatch(cityName, c.name));
+              if (city && city.lat && city.lng) {
+                coords.push({ lat: city.lat, lng: city.lng });
+              }
+            });
+            setAlertCoords(coords);
+            
+            if (notificationsEnabled || Notification.permission === 'granted') {
+              try {
+                const n = new Notification(t.alertActive, {
+                  body: relevantAlerts.join(", "),
+                  icon: "/favicon.ico",
+                  tag: "oref-alert-" + data.id,
+                  requireInteraction: true,
+                  silent: false
+                });
+                n.onclick = () => window.focus();
+              } catch (e) {
+                console.error("Notification error:", e);
+              }
             }
           }
         }
@@ -641,6 +660,12 @@ export default function App() {
                           {alerts.data.join(" • ")}
                         </p>
                       </div>
+                      {alertCoords.length > 0 && (
+                        <div className="mt-2 flex items-center gap-1 text-[10px] text-zinc-400 bg-zinc-900/50 px-2 py-1 rounded-full border border-zinc-800">
+                          <MapPin size={10} className="text-red-500" />
+                          <span>{alertCoords[0].lat.toFixed(3)}, {alertCoords[0].lng.toFixed(3)}</span>
+                        </div>
+                      )}
                     </motion.div>
                   ) : (
                     <div className="flex flex-col items-center gap-2 opacity-40">
@@ -705,6 +730,12 @@ export default function App() {
                         <p className="text-[10px] text-zinc-300 leading-tight">
                           {entry.data.join(", ")}
                         </p>
+                        {entry.lat && entry.lng && (
+                          <div className="flex items-center gap-1 text-[8px] text-zinc-500">
+                            <MapPin size={8} />
+                            <span>{entry.lat.toFixed(3)}, {entry.lng.toFixed(3)}</span>
+                          </div>
+                        )}
                         {entry.isSimulated && (
                           <span className="text-[8px] bg-amber-500/20 text-amber-500 px-1.5 py-0.5 rounded-md self-start font-bold uppercase">
                             {t.simulated}
@@ -752,6 +783,37 @@ export default function App() {
                   </div>
 
                   <div className="flex flex-col gap-2">
+                    <div className="bg-zinc-900/80 p-3 rounded-xl border border-zinc-800">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">System Status</span>
+                        <div className={`w-2 h-2 rounded-full ${healthInfo?.status === 'ok' ? 'bg-green-500' : 'bg-red-500'}`} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-[9px]">
+                        <div className="flex flex-col">
+                          <span className="text-zinc-500">Oref Poll:</span>
+                          <span className={healthInfo?.lastPoll?.status === 'Success' ? 'text-green-400' : 'text-amber-400'}>
+                            {healthInfo?.lastPoll?.status || 'Unknown'}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-zinc-500">Socket:</span>
+                          <span className={healthInfo?.socketStatus === 'Connected' ? 'text-green-400' : 'text-red-400'}>
+                            {healthInfo?.socketStatus || 'Disconnected'}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-zinc-500">RedAlert:</span>
+                          <span className={healthInfo?.redAlertMeStatus === 'Success' ? 'text-green-400' : 'text-red-400'}>
+                            {healthInfo?.redAlertMeStatus || 'Unknown'}
+                          </span>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-zinc-500">Cities:</span>
+                          <span>{cities.length} loaded</span>
+                        </div>
+                      </div>
+                    </div>
+
                     <button
                       onClick={requestPermissions}
                       className={`flex items-center justify-between w-full p-3 rounded-xl ${

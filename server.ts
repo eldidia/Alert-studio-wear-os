@@ -15,60 +15,21 @@ interface CityInfo {
   name: string;
   district: string;
   time: string;
+  lat?: number;
+  lng?: number;
 }
 
 const FALLBACK_CITIES_HE: CityInfo[] = [
-  { name: "תל אביב - יפו", district: "דן", time: "90" },
-  { name: "ירושלים", district: "ירושלים", time: "90" },
-  { name: "חיפה", district: "חיפה", time: "60" },
-  { name: "ראשון לציון", district: "דן", time: "90" },
-  { name: "פתח תקווה", district: "דן", time: "90" },
-  { name: "אשדוד", district: "לכיש", time: "60" },
-  { name: "נתניה", district: "שרון", time: "90" },
-  { name: "באר שבע", district: "מרכז הנגב", time: "60" },
-  { name: "בני ברק", district: "דן", time: "90" },
-  { name: "חולון", district: "דן", time: "90" },
-  { name: "רמת גן", district: "דן", time: "90" },
-  { name: "רחובות", district: "שפלה", time: "90" },
-  { name: "אשקלון", district: "לכיש", time: "30" },
-  { name: "בת ים", district: "דן", time: "90" },
-  { name: "בית שמש", district: "ירושלים", time: "90" },
-  { name: "כפר סבא", district: "שרון", time: "90" },
-  { name: "הרצליה", district: "שרון", time: "90" },
-  { name: "חדרה", district: "שרון", time: "90" },
-  { name: "מודיעין-מכבים-רעות", district: "שפלה", time: "90" },
-  { name: "לוד", district: "שפלה", time: "90" },
-  { name: "רמלה", district: "שפלה", time: "90" },
-  { name: "רעננה", district: "שרון", time: "90" },
-  { name: "מודיעין עילית", district: "שפלה", time: "90" },
-  { name: "רהט", district: "מרכז הנגב", time: "60" },
-  { name: "הוד השרון", district: "שרון", time: "90" },
-  { name: "גבעתיים", district: "דן", time: "90" },
-  { name: "קריית אתא", district: "חיפה", time: "60" },
-  { name: "נהריה", district: "קו העימות", time: "0" },
-  { name: "ביתר עילית", district: "ירושלים", time: "90" },
-  { name: "אום אל-פחם", district: "ואדי ערה", time: "90" },
-  { name: "קריית גת", district: "לכיש", time: "60" },
-  { name: "אילת", district: "אילת", time: "30" },
-  { name: "ראש העין", district: "שרון", time: "90" },
-  { name: "נס ציונה", district: "שפלה", time: "90" },
-  { name: "עכו", district: "גליל עליון", time: "30" },
-  { name: "אלעד", district: "שרון", time: "90" },
-  { name: "רמת השרון", district: "שרון", time: "90" },
-  { name: "כרמיאל", district: "גליל עליון", time: "30" },
-  { name: "יבנה", district: "שפלה", time: "60" },
-  { name: "טבריה", district: "גליל תחתון", time: "60" },
-  { name: "טייבה", district: "שרון", time: "90" },
-  { name: "קריית מוצקין", district: "חיפה", time: "60" },
-  { name: "קריית ים", district: "חיפה", time: "60" },
-  { name: "קריית ביאליק", district: "חיפה", time: "60" },
-  { name: "קריית שמונה", district: "קו העימות", time: "0" },
-  { name: "מעלה אדומים", district: "ירושלים", time: "90" },
-  { name: "אור יהודה", district: "דן", time: "90" },
-  { name: "צפת", district: "גליל עליון", time: "30" },
-  { name: "נתיבות", district: "עוטף עזה", time: "30" },
-  { name: "דימונה", district: "דרום הנגב", time: "60" },
-  { name: "שדרות", district: "עוטף עזה", time: "15" },
+  { name: "תל אביב - יפו", district: "דן", time: "90", lat: 32.0853, lng: 34.7818 },
+  { name: "ירושלים", district: "ירושלים", time: "90", lat: 31.7683, lng: 35.2137 },
+  { name: "חיפה", district: "חיפה", time: "60", lat: 32.7940, lng: 34.9896 },
+  { name: "ראשון לציון", district: "דן", time: "90", lat: 31.9730, lng: 34.7925 },
+  { name: "פתח תקווה", district: "דן", time: "90", lat: 32.0840, lng: 34.8878 },
+  { name: "אשדוד", district: "לכיש", time: "60", lat: 31.8044, lng: 34.6553 },
+  { name: "נתניה", district: "שרון", time: "90", lat: 32.3215, lng: 34.8532 },
+  { name: "באר שבע", district: "מרכז הנגב", time: "60", lat: 31.2518, lng: 34.7913 },
+  { name: "אשקלון", district: "לכיש", time: "30", lat: 31.6688, lng: 34.5743 },
+  { name: "אילת", district: "אילת", time: "30", lat: 29.5577, lng: 34.9519 },
 ];
 
 const FALLBACK_CITIES_EN: CityInfo[] = FALLBACK_CITIES_HE.map(c => ({
@@ -90,6 +51,8 @@ interface AlertLogEntry {
   data: string[];
   timestamp: string;
   isSimulated?: boolean;
+  lat?: number;
+  lng?: number;
 }
 
 let alertHistory: AlertLogEntry[] = [];
@@ -116,6 +79,16 @@ function processCities(jsonData: any, lang: string | any): CityInfo[] {
         name = item.v || item.n || item.value || item.label || "";
         district = item.d || item.district || "";
         time = item.t || item.time || "";
+        const lat = parseFloat(item.lat || item.latitude);
+        const lng = parseFloat(item.lng || item.longitude || item.altitude);
+        
+        return {
+          name: name.trim().normalize('NFC'),
+          district: district.trim(),
+          time: time.trim(),
+          lat: isNaN(lat) ? undefined : lat,
+          lng: isNaN(lng) ? undefined : lng
+        };
       }
       
       return {
@@ -198,16 +171,16 @@ async function startServer() {
   // API Proxy for Home Front Command (Pikud HaOref)
   // The official API is CORS-restricted and requires specific headers
   app.get("/api/alerts", async (req, res) => {
-    // Check history first for very recent alerts (within last 15 seconds)
-    // This provides a much faster response if background polling already caught something
+    // Check history first for very recent alerts (within last 30 seconds)
     const now = new Date();
-    const recentAlert = alertHistory.find(a => (now.getTime() - new Date(a.timestamp).getTime()) < 15000);
+    const recentAlert = alertHistory.find(a => (now.getTime() - new Date(a.timestamp).getTime()) < 30000);
     
     if (recentAlert) {
       return res.json({
         id: recentAlert.id,
         title: recentAlert.title,
         data: recentAlert.data,
+        timestamp: recentAlert.timestamp,
         warning: "From Real-time Cache"
       });
     }
@@ -556,9 +529,22 @@ async function startServer() {
             const alreadyLogged = alertHistory.find(a => a.id === jsonData.id);
             if (!alreadyLogged) {
               console.log(`New alert detected: ${jsonData.title} - ${jsonData.data.join(", ")}`);
+              
+              // Try to find coordinates for the first city
+              let lat, lng;
+              if (jsonData.data && jsonData.data.length > 0) {
+                const city = citiesCache['he']?.find(c => jsonData.data[0].includes(c.name));
+                if (city) {
+                  lat = city.lat;
+                  lng = city.lng;
+                }
+              }
+
               alertHistory.unshift({
                 ...jsonData,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                lat,
+                lng
               });
               if (alertHistory.length > 100) alertHistory.pop();
             }
@@ -646,11 +632,22 @@ async function startServer() {
                 else if (title === "hazardousMaterials") title = "אירוע חומרים מסוכנים";
 
                 console.log(`[Alert] New alert from redalert.me: ${alert.area} - ${title}`);
+                
+                // Try to find coordinates
+                let lat, lng;
+                const city = citiesCache['he']?.find(c => alert.area.includes(c.name));
+                if (city) {
+                  lat = city.lat;
+                  lng = city.lng;
+                }
+
                 alertHistory.unshift({
                   id: String(alert.id),
                   title: title,
                   data: [alert.area],
-                  timestamp: alertTime.toISOString()
+                  timestamp: alertTime.toISOString(),
+                  lat,
+                  lng
                 });
                 if (alertHistory.length > 100) alertHistory.pop();
               }
