@@ -471,8 +471,8 @@ async function startServer() {
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     try {
-      // Pikud HaOref official cities list endpoint
-      const url = `https://www.oref.org.il/Shared/Ajax/GetCities.aspx?lang=${lang}&v=${Date.now()}`;
+      // Pikud HaOref official cities list endpoint (using Mix for better coverage)
+      const url = `https://www.oref.org.il/Shared/Ajax/GetCitiesMix.aspx?lang=${lang}&v=${Date.now()}`;
       const headers: any = {
         "Host": "www.oref.org.il",
         "Referer": `https://www.oref.org.il/${lang}/Alerts/AlertsHistory`,
