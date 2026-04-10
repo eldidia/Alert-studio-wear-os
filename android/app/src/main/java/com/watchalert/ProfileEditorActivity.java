@@ -33,20 +33,6 @@ public class ProfileEditorActivity extends Activity {
         "תל אביב - יפו", "ירושלים", "חיפה", "באר שבע", "אשדוד", "נתניה", "ראשון לציון", "פתח תקווה"
     };
 
-    private static final String[] ALL_CITIES = {
-        "תל אביב - יפו", "ירושלים", "חיפה", "באר שבע", "אשדוד", "נתניה", "ראשון לציון", "פתח תקווה",
-        "חולון", "בני ברק", "רמת גן", "רחובות", "אשקלון", "בת ים", "בית שמש", "כפר סבא", "הרצליה",
-        "חדרה", "מודיעין-מכבים-רעות", "רמלה", "רעננה", "מודיעין עילית", "רהט", "הוד השרון", "גבעתיים",
-        "קריית אתא", "נהריה", "ביתר עילית", "אום אל-פחם", "קריית גת", "אילת", "ראש העין", "עפולה",
-        "נס ציונה", "עכו", "אלעד", "רמת השרון", "כרמיאל", "יבנה", "טבריה", "טייבה", "קריית מוצקין",
-        "שפרעם", "נוף הגליל", "קריית ים", "קריית ביאליק", "קריית אונו", "מעלה אדומים", "אור יהודה",
-        "צפת", "נתיבות", "דימונה", "טמרה", "סח'נין", "יהוד-מונוסון", "באקה אל-גרבייה", "אופקים",
-        "גבעת שמואל", "טירה", "ערד", "מגדל העמק", "קריית מלאכי", "כפר קאסם", "קריית שמונה", "נשר",
-        "מעלות-תרשיחא", "טירת כרמל", "שדרות", "בית שאן", "עראבה", "קלנסווה", "כפר יונה", "אריאל",
-        "אור עקיבא", "קריית גת", "קריית ארבע", "מבשרת ציון", "גן יבנה", "כפר מנדא", "מג'ד אל-כרום",
-        "יפיע", "כפר כנא", "ג'דיידה-מכר", "ריינה", "כסייפה", "ערערה", "תל שבע", "חריש"
-    };
-
     private static final String[][] ALERT_TYPES = {
         {"ירי רקטות וטילים", "Rockets"},
         {"חדירת כלי טיס עוין", "Aircraft"},
@@ -122,17 +108,22 @@ public class ProfileEditorActivity extends Activity {
     private void setupMajorCities() {
         majorCitiesContainer.removeAllViews();
         String currentCity = cityInput.getText().toString();
+        String normCurrent = CityUtils.normalize(currentCity);
 
-        List<String> majorNames = Arrays.asList("תל אביב - יפו", "ירושלים", "חיפה", "באר שבע", "אשדוד");
+        List<String> majorNames = Arrays.asList(MAJOR_CITIES);
         
+        // Use a set to keep track of added names to avoid duplicates if multiple regions match
+        java.util.Set<String> addedNames = new java.util.HashSet<>();
+
         for (CityManager.CityInfo city : allCities) {
-            if (!majorNames.contains(city.name)) continue;
+            if (!majorNames.contains(city.name) || addedNames.contains(city.name)) continue;
             
+            addedNames.add(city.name);
             Button cityBtn = new Button(this);
             cityBtn.setText(city.name);
             cityBtn.setTextSize(10);
             
-            boolean isSelected = city.name.equals(currentCity);
+            boolean isSelected = CityUtils.normalize(city.name).equals(normCurrent);
 
             cityBtn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
                 isSelected ? Color.parseColor("#2563eb") : Color.parseColor("#222222")
@@ -151,14 +142,37 @@ public class ProfileEditorActivity extends Activity {
 
     private void updateCitySuggestions(String query) {
         citySuggestionsContainer.removeAllViews();
-        if (query.length() < 2) {
+        String trimmedQuery = query.trim();
+        if (trimmedQuery.length() < 2) {
             citySuggestionsContainer.setVisibility(View.GONE);
             return;
         }
 
+        final String normQuery = CityUtils.normalize(trimmedQuery);
+
         List<CityManager.CityInfo> matches = allCities.stream()
-                .filter(city -> city.name.contains(query))
-                .limit(8)
+                .filter(city -> {
+                    String normName = CityUtils.normalize(city.name);
+                    return normName.contains(normQuery);
+                })
+                .sorted((a, b) -> {
+                    String normA = CityUtils.normalize(a.name);
+                    String normB = CityUtils.normalize(b.name);
+                    
+                    // Prioritize exact matches
+                    if (normA.equals(normQuery)) return -1;
+                    if (normB.equals(normQuery)) return 1;
+                    
+                    // Prioritize prefix matches
+                    boolean aStarts = normA.startsWith(normQuery);
+                    boolean bStarts = normB.startsWith(normQuery);
+                    if (aStarts && !bStarts) return -1;
+                    if (!aStarts && bStarts) return 1;
+                    
+                    // Then alphabetical
+                    return normA.compareTo(normB);
+                })
+                .limit(10)
                 .collect(Collectors.toList());
 
         if (matches.isEmpty()) {
