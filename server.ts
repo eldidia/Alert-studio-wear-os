@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import nodeFetch from "node-fetch";
+import { io } from "socket.io-client";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -97,6 +98,9 @@ let isSystemActive = true;
 let lastPollStatus = "Never polled";
 let lastPollTime = "";
 let lastPollError = "";
+let orefCookie = "";
+let socketStatus = "Disconnected";
+let redAlertMeStatus = "Never polled";
 
 function processCities(jsonData: any, lang: string | any): CityInfo[] {
   let cities: CityInfo[] = [];
@@ -151,6 +155,8 @@ async function startServer() {
       status: "ok", 
       active: isSystemActive, 
       time: new Date().toISOString(),
+      socketStatus,
+      redAlertMeStatus,
       lastPoll: {
         status: lastPollStatus,
         time: lastPollTime,
@@ -182,6 +188,7 @@ async function startServer() {
       timestamp: new Date().toISOString()
     };
 
+    console.log(`Received notification from Android: ${title} - ${newAlert.data.join(", ")}`);
     alertHistory.unshift(newAlert);
     if (alertHistory.length > 100) alertHistory.pop();
 
@@ -191,31 +198,56 @@ async function startServer() {
   // API Proxy for Home Front Command (Pikud HaOref)
   // The official API is CORS-restricted and requires specific headers
   app.get("/api/alerts", async (req, res) => {
+    // Check history first for very recent alerts (within last 15 seconds)
+    // This provides a much faster response if background polling already caught something
+    const now = new Date();
+    const recentAlert = alertHistory.find(a => (now.getTime() - new Date(a.timestamp).getTime()) < 15000);
+    
+    if (recentAlert) {
+      return res.json({
+        id: recentAlert.id,
+        title: recentAlert.title,
+        data: recentAlert.data,
+        warning: "From Real-time Cache"
+      });
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
     
     try {
-      const response = await fetch("https://www.oref.org.il/WarningMessages/alert/alerts.json", {
+      const headers: any = {
+        "Host": "www.oref.org.il",
+        "Referer": "https://www.oref.org.il/",
+        "X-Requested-With": "XMLHttpRequest",
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+        "Accept": "*/*",
+        "Accept-Language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Connection": "keep-alive",
+        "Cache-Control": "no-cache",
+      };
+
+      if (orefCookie) {
+        headers["Cookie"] = orefCookie;
+      }
+
+      const response = await nodeFetch("https://www.oref.org.il/WarningMessages/alert/alerts.json", {
         signal: controller.signal,
-        headers: {
-          "Host": "www.oref.org.il",
-          "Referer": "https://www.oref.org.il/",
-          "X-Requested-With": "XMLHttpRequest",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-          "Accept": "*/*",
-          "Accept-Language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
-          "Connection": "keep-alive",
-          "Cache-Control": "no-cache",
-          "Sec-Ch-Ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-          "Sec-Ch-Ua-Mobile": "?0",
-          "Sec-Ch-Ua-Platform": '"Windows"',
-          "Sec-Fetch-Dest": "empty",
-          "Sec-Fetch-Mode": "cors",
-          "Sec-Fetch-Site": "same-origin",
-        },
+        headers
       });
 
       if (!response.ok) {
+        // If Oref fails, return the latest alert from history if it's still relatively fresh (2 mins)
+        const freshAlert = alertHistory.find(a => (now.getTime() - new Date(a.timestamp).getTime()) < 120000);
+        if (freshAlert) {
+          return res.json({
+            id: freshAlert.id,
+            title: freshAlert.title,
+            data: freshAlert.data,
+            warning: "Fallback to History"
+          });
+        }
+
         if (response.status === 403) {
           return res.json({ id: "0", title: "API Blocked", data: [], warning: "Access Denied (403)" });
         }
@@ -284,24 +316,24 @@ async function startServer() {
 
     try {
       const url = `https://www.oref.org.il/Shared/Ajax/GetCityByLocation.aspx?lat=${lat}&lng=${lng}&lang=he`;
-      const response = await fetch(url, {
+      const headers: any = {
+        "Host": "www.oref.org.il",
+        "Referer": "https://www.oref.org.il/",
+        "X-Requested-With": "XMLHttpRequest",
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+        "Accept": "*/*",
+        "Accept-Language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Connection": "keep-alive",
+        "Cache-Control": "no-cache",
+      };
+
+      if (orefCookie) {
+        headers["Cookie"] = orefCookie;
+      }
+
+      const response = await nodeFetch(url, {
         signal: controller.signal,
-        headers: {
-          "Host": "www.oref.org.il",
-          "Referer": "https://www.oref.org.il/",
-          "X-Requested-With": "XMLHttpRequest",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-          "Accept": "*/*",
-          "Accept-Language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
-          "Connection": "keep-alive",
-          "Cache-Control": "no-cache",
-          "Sec-Ch-Ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-          "Sec-Ch-Ua-Mobile": "?0",
-          "Sec-Ch-Ua-Platform": '"Windows"',
-          "Sec-Fetch-Dest": "empty",
-          "Sec-Fetch-Mode": "cors",
-          "Sec-Fetch-Site": "same-origin",
-        }
+        headers
       });
       
       if (!response.ok) {
@@ -334,35 +366,34 @@ async function startServer() {
     try {
       // Pikud HaOref official cities list endpoint
       const url = `https://www.oref.org.il/Shared/Ajax/GetCities.aspx?lang=${lang}`;
-      const response = await fetch(url, {
+      const headers: any = {
+        "Host": "www.oref.org.il",
+        "Referer": `https://www.oref.org.il/${lang}/Alerts/AlertsHistory`,
+        "X-Requested-With": "XMLHttpRequest",
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Accept-Language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Connection": "keep-alive",
+        "Cache-Control": "no-cache",
+      };
+
+      if (orefCookie) {
+        headers["Cookie"] = orefCookie;
+      }
+
+      const response = await nodeFetch(url, {
         signal: controller.signal,
-        headers: {
-          "Host": "www.oref.org.il",
-          "Referer": `https://www.oref.org.il/${lang}/Alerts/AlertsHistory`,
-          "X-Requested-With": "XMLHttpRequest",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-          "Accept": "application/json, text/javascript, */*; q=0.01",
-          "Accept-Language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
-          "Connection": "keep-alive",
-          "Cache-Control": "no-cache",
-          "Sec-Ch-Ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-          "Sec-Ch-Ua-Mobile": "?0",
-          "Sec-Ch-Ua-Platform": '"Windows"',
-          "Sec-Fetch-Dest": "empty",
-          "Sec-Fetch-Mode": "cors",
-          "Sec-Fetch-Site": "same-origin",
-          "Pragma": "no-cache",
-        }
+        headers
       });
 
       if (!response.ok) {
         // If 403, try one more time with even simpler headers
         if (response.status === 403) {
-          const retryResponse = await fetch(url, {
+          const retryResponse = await nodeFetch(url, {
             signal: controller.signal,
             headers: {
               "Referer": "https://www.oref.org.il/",
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+              "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
               "X-Requested-With": "XMLHttpRequest",
             }
           });
@@ -470,28 +501,45 @@ async function startServer() {
     if (!isSystemActive) return;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
 
     try {
       lastPollTime = new Date().toISOString();
-      const response = await fetch("https://www.oref.org.il/WarningMessages/alert/alerts.json", {
+      
+      // 1. Try to refresh cookie if missing
+      if (!orefCookie) {
+        try {
+          const homeRes = await fetch("https://www.oref.org.il/", {
+            headers: {
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+            }
+          });
+          const cookies = homeRes.headers.get("set-cookie");
+          if (cookies) {
+            orefCookie = cookies.split(";")[0];
+            console.log("Obtained new Oref cookie");
+          }
+        } catch (e) {}
+      }
+
+      const headers: any = {
+        "Host": "www.oref.org.il",
+        "Referer": "https://www.oref.org.il/",
+        "X-Requested-With": "XMLHttpRequest",
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1",
+        "Accept": "application/json, text/javascript, */*; q=0.01",
+        "Accept-Language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Connection": "keep-alive",
+        "Cache-Control": "no-cache",
+      };
+
+      if (orefCookie) {
+        headers["Cookie"] = orefCookie;
+      }
+
+      const response = await nodeFetch("https://www.oref.org.il/WarningMessages/alert/alerts.json", {
         signal: controller.signal,
-        headers: {
-          "Host": "www.oref.org.il",
-          "Referer": "https://www.oref.org.il/",
-          "X-Requested-With": "XMLHttpRequest",
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-          "Accept": "*/*",
-          "Accept-Language": "he-IL,he;q=0.9,en-US;q=0.8,en;q=0.7",
-          "Connection": "keep-alive",
-          "Cache-Control": "no-cache",
-          "Sec-Ch-Ua": '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-          "Sec-Ch-Ua-Mobile": "?0",
-          "Sec-Ch-Ua-Platform": '"Windows"',
-          "Sec-Fetch-Dest": "empty",
-          "Sec-Fetch-Mode": "cors",
-          "Sec-Fetch-Site": "same-origin",
-        },
+        headers
       });
 
       if (response.ok) {
@@ -519,8 +567,38 @@ async function startServer() {
       } else {
         lastPollStatus = `Error ${response.status}`;
         lastPollError = response.statusText;
+        
+        // If 403, clear cookie and try history fallback
         if (response.status === 403) {
-          console.error("Background Polling: 403 Forbidden. Server might be blocked.");
+          orefCookie = "";
+          console.error("Background Polling: 403 Forbidden. Trying history fallback...");
+          
+          try {
+            const historyRes = await nodeFetch("https://www.oref.org.il/WarningMessages/History/AlertsHistory.json", {
+              signal: controller.signal,
+              headers
+            });
+            if (historyRes.ok) {
+              const historyData: any = await historyRes.json();
+              if (Array.isArray(historyData) && historyData.length > 0) {
+                lastPollStatus = "Success (History Fallback)";
+                // Process the most recent alert from history
+                const latest = historyData[0];
+                const alreadyLogged = alertHistory.find(a => a.id === latest.id || (a.title === latest.title && a.data[0] === latest.data));
+                if (!alreadyLogged) {
+                  console.log(`New alert detected from history: ${latest.title}`);
+                  alertHistory.unshift({
+                    id: latest.id || "hist-" + Date.now(),
+                    title: latest.title,
+                    data: [latest.data],
+                    timestamp: new Date().toISOString()
+                  });
+                  if (alertHistory.length > 100) alertHistory.pop();
+                }
+                return;
+              }
+            }
+          } catch (e) {}
         }
       }
     } catch (error: any) {
@@ -532,9 +610,120 @@ async function startServer() {
     }
   };
 
-  // Start background polling every 2 seconds
-  console.log("Background alert polling started (2s interval)");
-  setInterval(pollOref, 2000);
+  // Background polling for redalert.me (Very reliable fallback)
+  const pollRedAlertMe = async () => {
+    if (!isSystemActive) return;
+    try {
+      const response = await nodeFetch("https://api.redalert.me/alerts", {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1"
+        }
+      });
+      if (response.ok) {
+        redAlertMeStatus = "Success";
+        const data: any = await response.json();
+        if (Array.isArray(data)) {
+          data.forEach((alert: any) => {
+            const alertTime = new Date(alert.date * 1000);
+            const now = new Date();
+            
+            if (now.getTime() - alertTime.getTime() < 120000) {
+              const alreadyLogged = alertHistory.find(a => 
+                (a.id === String(alert.id)) || 
+                (a.title === alert.threat && a.data.includes(alert.area))
+              );
+
+              if (!alreadyLogged) {
+                // Map threat types to Hebrew titles
+                let title = alert.threat;
+                if (title === "missiles") title = "ירי רקטות וטילים";
+                else if (title === "hostileAircraftIntrusion") title = "חדירת כלי טיס עוין";
+                else if (title === "radiologicalEvent") title = "אירוע רדיולוגי";
+                else if (title === "earthquake") title = "רעידת אדמה";
+                else if (title === "tsunami") title = "צונאמי";
+                else if (title === "nonConventionalMissiles") title = "ירי טילים בלתי קונבנציונליים";
+                else if (title === "terroristInfiltration") title = "חדירת מחבלים";
+                else if (title === "hazardousMaterials") title = "אירוע חומרים מסוכנים";
+
+                console.log(`[Alert] New alert from redalert.me: ${alert.area} - ${title}`);
+                alertHistory.unshift({
+                  id: String(alert.id),
+                  title: title,
+                  data: [alert.area],
+                  timestamp: alertTime.toISOString()
+                });
+                if (alertHistory.length > 100) alertHistory.pop();
+              }
+            }
+          });
+        }
+      } else {
+        redAlertMeStatus = `Error ${response.status}`;
+        console.error(`[RedAlert.me] API Error: ${response.status}`);
+      }
+    } catch (error: any) {
+      redAlertMeStatus = `Failed: ${error.message}`;
+      console.error(`[RedAlert.me] Fetch Failed: ${error.message}`);
+    }
+  };
+
+  // Start background polling
+  console.log("Background alert polling started");
+  setInterval(pollOref, 10000); // Oref fallback (10s)
+  setInterval(pollRedAlertMe, 5000); // RedAlert.me (5s)
+
+  // Socket.io connection to RedAlert service
+  const REDALERT_URL = "https://redalert.orielhaim.com";
+  const socket = io(REDALERT_URL, {
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: Infinity,
+    transports: ['websocket'], // Force websocket to avoid some proxy issues
+    auth: {
+      apiKey: "public"
+    }
+  });
+
+  socket.on("connect", () => {
+    socketStatus = "Connected";
+    console.log("[Socket] Connected to RedAlert service");
+  });
+
+  socket.on("disconnect", (reason) => {
+    socketStatus = `Disconnected: ${reason}`;
+    console.log(`[Socket] Disconnected: ${reason}`);
+  });
+
+  socket.on("connect_error", (error) => {
+    socketStatus = `Error: ${error.message}`;
+    console.error("[Socket] Connection error:", error.message);
+  });
+
+  socket.on("alert", (alerts: any[]) => {
+    if (!isSystemActive) return;
+    
+    console.log(`[Socket] Received ${alerts.length} alert(s)`);
+    alerts.forEach((alert) => {
+      const alreadyLogged = alertHistory.find(a => 
+        (a.id === alert.id) || 
+        (a.title === alert.title && JSON.stringify(a.data) === JSON.stringify(alert.cities))
+      );
+      
+      if (!alreadyLogged) {
+        const newAlert: AlertLogEntry = {
+          id: alert.id || "soc-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5),
+          title: alert.title,
+          data: alert.cities || [],
+          timestamp: new Date().toISOString()
+        };
+        
+        console.log(`[Socket] Logging new alert: ${newAlert.title}`);
+        alertHistory.unshift(newAlert);
+        if (alertHistory.length > 100) alertHistory.pop();
+      }
+    });
+  });
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);

@@ -90,6 +90,7 @@ const translations = {
     tsunami: 'Tsunami',
     hazmat: 'Hazardous Materials',
     radiological: 'Radiological Event',
+    nonConventional: 'Non-Conventional Missiles',
     alertLog: 'Alert Log',
     simulation: 'Simulation',
     simulateAlert: 'Send Simulated Alert',
@@ -133,6 +134,7 @@ const translations = {
     tsunami: 'تسونامي',
     hazmat: 'مواد خطرة',
     radiological: 'حدث إشعاعي',
+    nonConventional: 'صواريخ غير تقليدية',
     alertLog: 'سجل التنبيهات',
     simulation: 'محاكاة',
     simulateAlert: 'إرسال تنبيه محاكى',
@@ -176,6 +178,7 @@ const translations = {
     tsunami: 'Цунами',
     hazmat: 'Опасные вещества',
     radiological: 'Радиационная угроза',
+    nonConventional: 'Неконвенциональные ракеты',
     alertLog: 'Журнал оповещений',
     simulation: 'Симуляция',
     simulateAlert: 'Отправить симуляцию',
@@ -217,6 +220,7 @@ const ALERT_TYPES = [
   { id: 'tsunami', he: 'צונאמי', en: 'Tsunami' },
   { id: 'hazmat', he: 'חומרים מסוכנים', en: 'Hazardous Materials' },
   { id: 'radiological', he: 'אירוע רדיולוגי', en: 'Radiological Event' },
+  { id: 'nonConventional', he: 'ירי טילים בלתי קונבנציונליים', en: 'Non-Conventional Missiles' },
 ];
 
 export default function App() {
@@ -1029,27 +1033,49 @@ export default function App() {
                       <Power size={14} className={isSystemActive ? "text-zinc-500" : "text-red-400"} />
                     </button>
 
-                    {healthInfo && healthInfo.lastPoll && (
+                    {healthInfo && (
                       <div className="mt-2 p-2 rounded-lg bg-zinc-900/50 border border-zinc-800/50 flex flex-col gap-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-[8px] text-zinc-500 uppercase tracking-widest">Server Polling</span>
+                          <span className="text-[8px] text-zinc-500 uppercase tracking-widest">Real-time Socket</span>
                           <span className={`text-[8px] font-bold ${
-                            healthInfo.lastPoll.status === 'Success' ? 'text-green-500' : 'text-red-500'
+                            healthInfo.socketStatus?.startsWith('Connected') ? 'text-green-500' : 'text-red-500'
                           }`}>
-                            {healthInfo.lastPoll.status}
+                            {healthInfo.socketStatus || 'Unknown'}
                           </span>
                         </div>
-                        {healthInfo.lastPoll.error && (
-                          <span className="text-[7px] text-red-400/80 leading-tight">
-                            {healthInfo.lastPoll.error}
+
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-[8px] text-zinc-500 uppercase tracking-widest">RedAlert.me API</span>
+                          <span className={`text-[8px] font-bold ${
+                            healthInfo.redAlertMeStatus === 'Success' ? 'text-green-500' : 'text-red-500'
+                          }`}>
+                            {healthInfo.redAlertMeStatus || 'Unknown'}
                           </span>
+                        </div>
+                        
+                        {healthInfo.lastPoll && (
+                          <>
+                            <div className="flex items-center justify-between mt-1 pt-1 border-t border-zinc-800/30">
+                              <span className="text-[8px] text-zinc-500 uppercase tracking-widest">Polling Fallback</span>
+                              <span className={`text-[8px] font-bold ${
+                                healthInfo.lastPoll.status === 'Success' || healthInfo.lastPoll.status?.includes('Success') ? 'text-green-500' : 'text-red-500'
+                              }`}>
+                                {healthInfo.lastPoll.status}
+                              </span>
+                            </div>
+                            {healthInfo.lastPoll.error && (
+                              <span className="text-[7px] text-red-400/80 leading-tight">
+                                {healthInfo.lastPoll.error}
+                              </span>
+                            )}
+                            <div className="flex items-center justify-between">
+                              <span className="text-[7px] text-zinc-600">Last Check</span>
+                              <span className="text-[7px] text-zinc-500">
+                                {new Date(healthInfo.lastPoll.time).toLocaleTimeString()}
+                              </span>
+                            </div>
+                          </>
                         )}
-                        <div className="flex items-center justify-between">
-                          <span className="text-[7px] text-zinc-600">Last Check</span>
-                          <span className="text-[7px] text-zinc-500">
-                            {new Date(healthInfo.lastPoll.time).toLocaleTimeString()}
-                          </span>
-                        </div>
                       </div>
                     )}
                   </div>
